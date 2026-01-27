@@ -2,6 +2,7 @@ import { Router } from "express";
 import { companiesService } from "../db.js";
 import { login } from "../controller/auth/login.js";
 import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
+import { loginEmpresa } from "../controller/auth/login_empresa.js";
 
 
 const auth = Router();

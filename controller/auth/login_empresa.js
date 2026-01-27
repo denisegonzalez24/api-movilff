@@ -6,7 +6,9 @@ export async function loginEmpresa({ db, req }) {
     const { companyCode } = req.body;
 
 
+
     const company = await companiesService.getByCode(companyCode);
+
 
     const [sistemaData] = await LightdataORM.select({
         db,

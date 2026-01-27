@@ -20,6 +20,7 @@ export const jwtIssuer = process.env.JWT_ISSUER;
 export const jwtAudience = process.env.JWT_AUDIENCE;
 
 export const urlSubidaImagenes = process.env.URL_SUBIDA_IMAGENES;
+console.log(redisHost, "  ", redisPort);
 
 export const redisClient = createClient({
     socket: {
@@ -32,6 +33,18 @@ export const redisClient = createClient({
 redisClient.on("error", (err) => {
     logRed(err);
 });
+export const initRedis = async () => {
+    try {
+        console.log("Connecting Redis to", redisHost, redisPort);
+        if (!redisClient.isOpen) {
+            await redisClient.connect();
+            console.log("Redis connected ✅");
+        }
+    } catch (e) {
+        console.error("Redis connect failed ❌", e);
+        throw e;
+    }
+};
 
 export const companiesService = new CompaniesService({ redisClient, redisKey: "empresasFF" })
 export const companiesServiceTMS = new CompaniesService({ redisClient, redisKey: "empresasData" })
