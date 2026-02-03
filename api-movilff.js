@@ -20,6 +20,17 @@ const jwtIssuer = process.env.JWT_ISSUER;
 const jwtAudience = process.env.JWT_AUDIENCE;
 
 // rutas
+
+app.get('/ping', (req, res) => {
+  const start = process.hrtime.bigint();
+  const end = process.hrtime.bigint();
+
+  let ms = Number(end - start) / 1_000_000;
+
+  if (ms < 1) ms = 1;
+
+  res.send(Math.round(ms).toString());
+});
 app.use("/api/auth", auth);
 app.use(verifyToken({ jwtSecret, jwtIssuer, jwtAudience }));
 app.use("/api/preload", preload);

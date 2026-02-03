@@ -150,63 +150,66 @@ export async function getFilteredOrdenesTrabajoByClienteFiltered({ db, req }) {
 
     // ✅ Pedidos con productos ADENTRO de cada pedido
     const dataSql = `
-    SELECT 
-      ot.did,
-      ot.estado,
-      ot.asignado,
-      ot.fecha_inicio,
-      ot.fecha_fin,
-      ot.alertada,
+  SELECT 
+    ot.did,
+    ot.estado,
+    ot.asignado,
+    ot.fecha_inicio,
+    ot.fecha_fin,
+    ot.alertada,
 
-      COALESCE(
-        JSON_ARRAYAGG(
-          DISTINCT JSON_OBJECT(
-            'did', p.did,
-            'flex', p.flex,
-            'estado', p.status,
-            'did_cliente', p.did_cliente,
-            'id_venta', p.number,
-            'productos', COALESCE(
-              (
-                SELECT JSON_ARRAYAGG(
-                  JSON_OBJECT(
-                    'did_producto', pp.did_producto,
-                    'seller_sku', pp.seller_sku,
-                    'producto_nombre', pr.titulo,
-                    'posicion', pr.posicion
-                  )
+    COALESCE(
+      JSON_ARRAYAGG(
+        DISTINCT JSON_OBJECT(
+          'did', p.did,
+          'flex', p.flex,
+          'estado', p.status,
+          'did_cliente', p.did_cliente,
+          'id_venta', p.number,
+          'productos', COALESCE(
+            (
+              SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                  'did_producto', pp.did_producto,
+                  'seller_sku', pp.seller_sku,
+                  'identificadores_especiales', pr.dids_ie,             
+                  'producto_nombre', pr.titulo,
+                  'posicion', pr.posicion,
+                  'imagen',pr.imagen,
+                  'ean',pr.ean
                 )
-                FROM pedidos_productos pp
-                LEFT JOIN productos pr ON pr.did = pp.did_producto
-                WHERE pp.did_pedido = p.id
-              ),
-              JSON_ARRAY()
-            )
+              )
+              FROM pedidos_productos pp
+              LEFT JOIN productos pr ON pr.did = pp.did_producto
+              WHERE pp.did_pedido = p.id
+            ),
+            JSON_ARRAY()
           )
-        ),
-        JSON_ARRAY()
-      ) AS pedidos
+        )
+      ),
+      JSON_ARRAY()
+    ) AS pedidos
 
-    FROM ordenes_trabajo AS ot
-    LEFT JOIN ordenes_trabajo_pedidos AS otp 
-      ON ot.did = otp.did_orden_trabajo
-    LEFT JOIN pedidos AS p
-      ON otp.did_pedido = p.id
-    ${whereSql}
-    GROUP BY ot.did
-    ${orderSql}, ot.did ASC
-    LIMIT ? OFFSET ?;
-  `;
+  FROM ordenes_trabajo AS ot
+  LEFT JOIN ordenes_trabajo_pedidos AS otp 
+    ON ot.did = otp.did_orden_trabajo
+  LEFT JOIN pedidos AS p
+    ON otp.did_pedido = p.id
+  ${whereSql}
+  GROUP BY ot.did
+  ${orderSql}, ot.did ASC
+  LIMIT ? OFFSET ?;
+`;
 
     const countSql = `
-    SELECT COUNT(DISTINCT ot.did) AS total
-    FROM ordenes_trabajo AS ot
-    LEFT JOIN ordenes_trabajo_pedidos AS otp 
-      ON ot.did = otp.did_orden_trabajo
-    LEFT JOIN pedidos AS p
-      ON otp.did_pedido = p.id
-    ${whereSql};
-  `;
+  SELECT COUNT(DISTINCT ot.did) AS total
+  FROM ordenes_trabajo AS ot
+  LEFT JOIN ordenes_trabajo_pedidos AS otp 
+    ON ot.did = otp.did_orden_trabajo
+  LEFT JOIN pedidos AS p
+    ON otp.did_pedido = p.id
+  ${whereSql};
+`;
 
     const rows = await executeQuery({
         db,
