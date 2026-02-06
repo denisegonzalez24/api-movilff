@@ -33,16 +33,11 @@ app.get('/ping', (req, res) => {
   res.send(Math.round(ms).toString());
 });
 app.get("/_sat/metrics", async (req, res) => {
-  try {
-    const data = await collectSatMetrics({
-      serviceName: "mi-servicio-x",
-      includeProcessCpu: true,
-      processCpuSampleMs: 120,
-    });
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ status: "error", message: String(e?.message || e) });
-  }
+  const data = await collectSatMetrics({
+    serviceName: "mi-servicio-x",
+    returnRaw: true, // false si querés solo simple
+  });
+  res.json(data);
 });
 
 app.use("/api/auth", auth);
