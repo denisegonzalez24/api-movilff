@@ -6,6 +6,7 @@ import { initRedis } from "./db.js";
 import preload from "./routes/preload.route.js";
 import ordenes from "./routes/ordenes_trabajo.route.js";
 import dashboard from "./routes/home.route.js";
+import { collectSatMetrics } from "./src/satMetrics.js";
 
 const app = express();
 
@@ -31,6 +32,19 @@ app.get('/ping', (req, res) => {
 
   res.send(Math.round(ms).toString());
 });
+app.get("/_sat/metrics", async (req, res) => {
+  try {
+    const data = await collectSatMetrics({
+      serviceName: "mi-servicio-x",
+      includeProcessCpu: true,
+      processCpuSampleMs: 120,
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ status: "error", message: String(e?.message || e) });
+  }
+});
+
 app.use("/api/auth", auth);
 app.use(verifyToken({ jwtSecret, jwtIssuer, jwtAudience }));
 app.use("/api/preload", preload);
