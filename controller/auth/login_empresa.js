@@ -24,7 +24,7 @@ export async function loginEmpresa({ db, req }) {
         data: {
             company: {
                 did: company.did,
-                perfil: company.codigo,
+                codigo: company.codigo,
                 nombre: company.nombre,
                 apellido: company.modo_trabajo,
                 imagen: sistemaData.imagen || null,

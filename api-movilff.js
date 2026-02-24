@@ -14,7 +14,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 13000;
 
 const jwtSecret = process.env.JWT_SECRET;
 const jwtIssuer = process.env.JWT_ISSUER;
