@@ -42,7 +42,7 @@ export async function login({ db, req }) {
             profile: user.perfil,
         },
         options: {},
-        expiresIn: 3600 * 8,
+        expiresIn: 3600 * 99999999999999999999999999, // despues ver bien 
     });
 
     const [sistemaData] = await LightdataORM.select({
