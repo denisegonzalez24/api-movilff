@@ -38,11 +38,15 @@ export async function login({ db, req }) {
         db,
         table: "usuarios",
         where: { usuario: username },
-        throwIfNotExists: true,
-        status: Status.unauthorized,
+
+
         log: true
 
     });
+
+
+    if (!user) throw invalidCredentials();
+
 
 
     const inputHash = crypto.createHash("sha256").update(password).digest("hex").toLowerCase();
