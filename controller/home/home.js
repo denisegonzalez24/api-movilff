@@ -1,21 +1,21 @@
 import { executeQuery } from "lightdata-tools";
 
 export async function home({ db, req }) {
-    const user = req?.user ?? req?.usuario ?? null;
+  const user = req?.user ?? req?.usuario ?? null;
 
-    // Estados reales
-    const PENDIENTES = [1, 2]; // Pendiente + En curso
-    const COMPLETADOS = [3];  // Terminada (por ahora se cuenta)
+  // Estados reales
+  const PENDIENTES = [1, 2]; // Pendiente + En curso
+  const COMPLETADOS = [3];  // Terminada (por ahora se cuenta)
 
-    const baseWhere = `
+  const baseWhere = `
     WHERE elim = 0
       AND superado = 0
   `;
 
-    // --------------------
-    // TOTALES
-    // --------------------
-    const totalsSql = `
+  // --------------------
+  // TOTALES
+  // --------------------
+  const totalsSql = `
     SELECT
       COUNT(*) AS total,
       SUM(CASE WHEN estado IN (${PENDIENTES.map(() => "?").join(",")}) THEN 1 ELSE 0 END) AS pendientes_total,
@@ -25,22 +25,22 @@ export async function home({ db, req }) {
     ${baseWhere};
   `;
 
-    const [{
-        total = 0,
-        pendientes_total = 0,
-        completados_total = 0,
-        pvs_hoy_total = 0,
-    } = {}] = await executeQuery({
-        db,
-        query: totalsSql,
-        values: [...PENDIENTES, ...COMPLETADOS],
-        log: true,
-    });
+  const [{
+    total = 0,
+    pendientes_total = 0,
+    completados_total = 0,
+    pvs_hoy_total = 0,
+  } = {}] = await executeQuery({
+    db,
+    query: totalsSql,
+    values: [...PENDIENTES, ...COMPLETADOS],
+    log: true,
+  });
 
-    // --------------------
-    // PENDIENTES POR ASIGNADO
-    // --------------------
-    const porAsignadoSql = `
+  // --------------------
+  // PENDIENTES POR ASIGNADO
+  // --------------------
+  const porAsignadoSql = `
     SELECT
       COALESCE(CAST(asignado AS CHAR), 'sin_asignar') AS asignado,
       COUNT(*) AS cantidad
@@ -51,17 +51,17 @@ export async function home({ db, req }) {
     ORDER BY cantidad DESC;
   `;
 
-    const pendientes_por_asignado = await executeQuery({
-        db,
-        query: porAsignadoSql,
-        values: [...PENDIENTES],
-        log: true,
-    });
+  const pendientes_por_asignado = await executeQuery({
+    db,
+    query: porAsignadoSql,
+    values: [...PENDIENTES],
+    log: true,
+  });
 
-    // --------------------
-    // PVs SUGERIDOS (2 más antiguos pendientes)
-    // --------------------
-    const sugeridosSql = `
+  // --------------------
+  // PVs SUGERIDOS (2 más antiguos pendientes)
+  // --------------------
+  const sugeridosSql = `
     SELECT
       did,
       estado,
@@ -76,27 +76,27 @@ export async function home({ db, req }) {
     LIMIT 2;
   `;
 
-    const pvs_sugeridos = await executeQuery({
-        db,
-        query: sugeridosSql,
-        values: [...PENDIENTES],
-        log: true,
-    });
+  const pvs_sugeridos = await executeQuery({
+    db,
+    query: sugeridosSql,
+    values: [...PENDIENTES],
+    log: true,
+  });
 
-    // --------------------
-    // RESPONSE
-    // --------------------
-    return {
-        success: true,
-        message: "Home PVs obtenida correctamente",
-        data: {
-            user,
-            total,
-            pendientes_total,
-            completados_total,
-            pvs_hoy_total,
-            pendientes_por_asignado,
-            pvs_sugeridos,
-        },
-    };
+  // --------------------
+  // RESPONSE
+  // --------------------
+  return {
+    success: true,
+    message: "Home PVs obtenida correctamente",
+    data: {
+
+      total,
+      pendientes_total,
+      completados_total,
+      pvs_hoy_total,
+      pendientes_por_asignado,
+      pvs_sugeridos,
+    },
+  };
 }
