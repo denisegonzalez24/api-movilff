@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import { CustomException, generateToken, LightdataORM, Status } from "lightdata-tools";
-import { companiesService, jwtAudience, jwtIssuer, jwtSecret, redisClient } from "../../db.js";
+import { jwtAudience, jwtIssuer, jwtSecret, redisClient } from "../../db.js";
 import { LightdataORMFix } from "../../src/ormFix.js";
+import { CompaniesServiceFixed } from "../../src/companiesServiceFix.js";
 
 const ACCESS_TTL_SECONDS = 60 * 15;           // 15 minutos
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
@@ -25,12 +26,13 @@ function invalidCredentials() {
     return new CustomException({
         title: "Credenciales inválidas",
         message: "Usuario o contraseña incorrectos",
-        status: Status.unauthorized,
+        status: 401,
     });
 }
 
 export async function login({ db, req }) {
     const { username, password, companyCode } = req.body;
+
 
     const [user] = await LightdataORMFix.select({
         db,
@@ -38,17 +40,10 @@ export async function login({ db, req }) {
         where: { usuario: username },
         throwIfNotExists: true,
         status: Status.unauthorized,
+        log: true
 
     });
 
-    // if (user == null) {
-
-    //     throw new CustomException({
-    //         title: "Credenciales inválidas",
-    //         message: "Usuario o contraseña incorrectos",
-    //         status: Status.unauthorized,
-    //     });
-    // }
 
     const inputHash = crypto.createHash("sha256").update(password).digest("hex").toLowerCase();
     const dbHash = String(user.pass || "").toLowerCase();
@@ -59,7 +54,10 @@ export async function login({ db, req }) {
     const ok = crypto.timingSafeEqual(Buffer.from(dbHash, "utf8"), Buffer.from(inputHash, "utf8"));
     if (!ok) throw invalidCredentials();
 
-    const company = await companiesService.getByCode(companyCode);
+
+
+    const company = await CompaniesServiceFixed.getByCode(companyCode);
+
 
     const token = generateToken({
         jwtSecret,

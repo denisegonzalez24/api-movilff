@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { companiesService } from "../db.js";
+import { companiesService, companiesServiceFixed } from "../db.js";
 import { login, logout, refresh } from "../controller/auth/login.js";
 import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
 import { loginEmpresa } from "../controller/auth/login_empresa.js";
@@ -26,7 +26,7 @@ auth.post(
         required: ['username', 'password', 'companyCode'],
         companyResolver2: async ({ req }) => {
             const { companyCode } = req.body;
-            const company = await companiesService.getByCode(companyCode);
+            const company = await companiesServiceFixed.getByCode(companyCode);
             return company;
         },
         controller: ({ req, db }) => login({ db, req }),

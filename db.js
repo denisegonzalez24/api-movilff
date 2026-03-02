@@ -1,6 +1,7 @@
 import { createClient } from "redis";
 import dotenv from "dotenv";
 import { CompaniesService, logRed } from "lightdata-tools";
+import { CompaniesServiceFixed } from "./src/companiesServiceFix.js";
 
 dotenv.config({ path: process.env.ENV_FILE || ".env" });
 
@@ -47,6 +48,7 @@ export const initRedis = async () => {
 };
 
 export const companiesService = new CompaniesService({ redisClient, redisKey: "empresasFF" })
+export const companiesServiceFixed = new CompaniesServiceFixed({ redisClient, redisKey: "empresasFF" })
 export const companiesServiceTMS = new CompaniesService({ redisClient, redisKey: "empresasData" })
 export default redisClient;
 

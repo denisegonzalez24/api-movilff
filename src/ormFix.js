@@ -199,6 +199,13 @@ export class LightdataORMFix {
                 status: Status.conflict,
             });
         }
+        if (throwIfNotExists && status !== Status.notFound && result.length === 0) {
+            throw new CustomException({
+                title: "No encontrado",
+                message: throwIfNotExistsMessage ?? `No se encontró registro en ${table} con los valores proporcionados`,
+                status: status,
+            });
+        }
         if (throwIfNotExists && result.length === 0) {
             throw new CustomException({
                 title: "No encontrado",
@@ -206,13 +213,6 @@ export class LightdataORMFix {
                 status: Status.notFound,
             });
 
-        }
-        if (throwIfNotExists && status !== Status.notFound && result.length === 0) {
-            throw new CustomException({
-                title: "No encontrado",
-                message: throwIfNotExistsMessage ?? `No se encontró registro en ${table} con los valores proporcionados`,
-                status: status,
-            });
         }
 
         return result;
