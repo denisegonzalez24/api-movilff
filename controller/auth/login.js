@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { CustomException, generateToken, LightdataORM, Status } from "lightdata-tools";
-import { jwtAudience, jwtIssuer, jwtSecret, redisClient } from "../../db.js";
+import { companiesServiceFixed, jwtAudience, jwtIssuer, jwtSecret, redisClient } from "../../db.js";
 import { LightdataORMFix } from "../../src/ormFix.js";
 import { CompaniesServiceFixed } from "../../src/companiesServiceFix.js";
 
@@ -60,7 +60,7 @@ export async function login({ db, req }) {
 
 
 
-    const company = await CompaniesServiceFixed.getByCode(companyCode);
+    const company = await companiesServiceFixed.getByCode(companyCode);
 
 
     const token = generateToken({
