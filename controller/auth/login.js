@@ -95,7 +95,7 @@ export async function login({ db, req }) {
         message: "Inicio de sesión exitoso",
         data: {
             user: {
-                did: user.did,
+                did: String(user.did),
                 perfil: user.perfil,
                 nombre: user.nombre,
                 apellido: user.apellido,

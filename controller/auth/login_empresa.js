@@ -23,7 +23,7 @@ export async function loginEmpresa({ db, req }) {
         message: "Inicio de sesión exitoso",
         data: {
             company: {
-                did: company.did,
+                did: String(company.did),
                 codigo: company.codigo,
                 nombre: company.nombre,
                 apellido: company.modo_trabajo,
