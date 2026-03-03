@@ -96,7 +96,7 @@ export async function login({ db, req }) {
         data: {
             user: {
                 did: String(user.did),
-                perfil: user.perfil,
+                perfil: String(user.perfil),
                 nombre: user.nombre,
                 apellido: user.apellido,
                 email: user.email,
