@@ -9,6 +9,7 @@ export async function loginEmpresa({ db, req }) {
 
 
     const company = await companiesService.getByCode(companyCode);
+    console.log(company);
 
     if (!company) {
         throw new CustomException({
