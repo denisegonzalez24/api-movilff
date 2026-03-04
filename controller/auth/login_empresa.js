@@ -10,6 +10,14 @@ export async function loginEmpresa({ db, req }) {
 
     const company = await companiesService.getByCode(companyCode);
 
+    if (!company) {
+        throw new CustomException({
+            title: "Empresa no encontrada",
+            message: "La empresa no se encuentra registrada en el sistema",
+            status: Status.notFound,
+        });
+    }
+
 
     const [sistemaData] = await LightdataORMFix.select({
         db,
