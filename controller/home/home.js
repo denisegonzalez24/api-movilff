@@ -5,7 +5,7 @@ export async function home({ db, req }) {
 
   // Estados reales
   const PENDIENTES = [1, 2]; // Pendiente + En curso
-  const COMPLETADOS = [3];  // Terminada (por ahora se cuenta)
+  const COMPLETADOS = [3]; // Terminada (por ahora se cuenta)
 
   const baseWhere = `
     WHERE elim = 0
@@ -25,12 +25,14 @@ export async function home({ db, req }) {
     ${baseWhere};
   `;
 
-  const [{
-    total = 0,
-    pendientes_total = 0,
-    completados_total = 0,
-    pvs_hoy_total = 0,
-  } = {}] = await executeQuery({
+  const [
+    {
+      total = 0,
+      pendientes_total = 0,
+      completados_total = 0,
+      pvs_hoy_total = 0,
+    } = {},
+  ] = await executeQuery({
     db,
     query: totalsSql,
     values: [...PENDIENTES, ...COMPLETADOS],
@@ -59,28 +61,117 @@ export async function home({ db, req }) {
   });
 
   // --------------------
-  // PVs SUGERIDOS (2 más antiguos pendientes)
+  // PEDIDOS SUGERIDOS (2 OT más antiguas pendientes)
+  // 1) Traemos las 2 OTs sugeridas + did_pedido + datos del pedido
+  // 2) Traemos TODOS los productos de esos pedidos y los agrupamos
   // --------------------
   const sugeridosSql = `
     SELECT
-      did,
-      estado,
-      asignado,
-      fecha_inicio,
-      fecha_fin,
-      alertada
-    FROM ordenes_trabajo
-    ${baseWhere}
-      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
-    ORDER BY fecha_inicio ASC
+      ot.did AS ot_did,
+      ot.estado,
+      ot.asignado,
+      ot.fecha_inicio,
+      ot.fecha_fin,
+      ot.alertada,
+
+      otp.did_pedido,
+
+      p.number,
+      p.flex,
+  
+      p.fecha_venta AS fecha_pedido
+    FROM ordenes_trabajo ot
+    LEFT JOIN ordenes_trabajo_pedidos otp
+      ON otp.did = ot.did
+     AND otp.elim = 0
+     AND otp.superado = 0
+    LEFT JOIN pedidos p
+      ON p.did = otp.did_pedido
+     AND p.elim = 0
+     AND p.superado = 0
+    WHERE ot.elim = 0
+      AND ot.superado = 0
+      AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
+    ORDER BY ot.fecha_inicio ASC
     LIMIT 2;
   `;
 
-  const pvs_sugeridos = await executeQuery({
+  const sugeridos = await executeQuery({
     db,
     query: sugeridosSql,
     values: [...PENDIENTES],
     log: true,
+  });
+
+  const didPedidos = (sugeridos ?? [])
+    .map((x) => x?.did_pedido)
+    .filter(Boolean);
+
+  // Mapa: did_pedido -> productos[]
+  const productosPorPedido = new Map();
+
+  if (didPedidos.length > 0) {
+    const productosSql = `
+      SELECT
+        pp.did_pedido,
+        pp.did_producto,
+        pp.codigo,
+        pp.imagen,
+        pp.descripcion,
+        pp.cantidad,
+        pp.did_producto_variante_valor,
+        pp.seller_sku,
+        pr.posicion
+      FROM pedidos_productos pp
+      LEFT JOIN productos pr
+        ON pr.did = pp.did_producto
+       AND pr.elim = 0
+       AND pr.superado = 0
+      WHERE pp.elim = 0
+        AND pp.superado = 0
+        AND pp.did_pedido IN (${didPedidos.map(() => "?").join(",")})
+      ORDER BY pp.did_pedido, pp.did_producto;
+    `;
+
+    const productosRows = await executeQuery({
+      db,
+      query: productosSql,
+      values: didPedidos,
+      log: true,
+    });
+
+    for (const r of productosRows ?? []) {
+      const key = String(r.did_pedido);
+      if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
+
+      productosPorPedido.get(key).push({
+        did: String(r.did_producto ?? ""),
+        titulo: r.descripcion ?? "",
+        ean: String(r.codigo ?? ""),
+        sku: String(r.seller_sku ?? ""),
+        posicion: r.posicion ?? "",
+        cantidad: String(r.cantidad ?? "0"),
+        foto: r.imagen ?? "assets/images/auri.jpg",
+        identificadores_especiales: [], // lo completas con tu lógica actual
+      });
+    }
+  }
+
+  const pedidos_sugeridos = (sugeridos ?? []).map((s) => {
+    const pedidoKey = String(s.did_pedido ?? "");
+    return {
+      did: String(s.ot_did ?? ""),
+      id_venta: String(s.number ?? ""),
+      asignado: String(s.asignado ?? ""),
+      tienda: s.flex ?? "",
+      //  nombre: s.nombre ?? "",
+      fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
+
+      procesado: "0",
+      productos: productosPorPedido.get(pedidoKey) ?? [],
+      insumos: [], // lo completas con tu lógica actual
+      avisos: [], // lo completas con tu lógica actual
+    };
   });
 
   // --------------------
@@ -90,13 +181,14 @@ export async function home({ db, req }) {
     success: true,
     message: "Home PVs obtenida correctamente",
     data: {
-
       total,
       pendientes_total,
       completados_total,
       pvs_hoy_total,
       pendientes_por_asignado,
-      pvs_sugeridos,
+
+      // nuevo formato:
+      pedidos_sugeridos,
     },
   };
 }
