@@ -82,7 +82,7 @@ export async function home({ db, req }) {
       p.fecha_venta AS fecha_pedido
     FROM ordenes_trabajo ot
     LEFT JOIN ordenes_trabajo_pedidos otp
-      ON otp.did = ot.did
+      ON otp.did_orden_trabajo = ot.did
      AND otp.elim = 0
      AND otp.superado = 0
     LEFT JOIN pedidos p
@@ -93,14 +93,14 @@ export async function home({ db, req }) {
       AND ot.superado = 0
       AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
     ORDER BY ot.id DESC
-    LIMIT 2;
+LIMIT 2
   `;
 
   const sugeridos = await executeQuery({
     db,
     query: sugeridosSql,
     values: [...PENDIENTES],
-    log: true,
+
   });
 
   const didPedidos = (sugeridos ?? [])
@@ -139,20 +139,27 @@ export async function home({ db, req }) {
       db,
       query: productosSql,
       values: didPedidos,
-      log: true,
+
     });
 
     // mapear stock por did_producto_variante_valor
 
 
     for (const r of productosRows ?? []) {
-      if (productosRows.tiene_ie == 1) {
+      if (r.tiene_ie == 1) {
+        console.log("entramos al iffff");
+
+
+
         const stock = await LightdataORM.select({
           db,
           table: "stock_producto_detalle",
-          where: { did_producto_variante_valor: r.did_producto_variante_valor },
-          select: ["stock", data_ie]
+          where: { did_producto_combinacion: r.did_producto_variante_valor },
+          select: ["stock", "data_ie"],
+          log: true
         });
+
+
         //agregar a r el stock encontrado
         r.stock = stock?.[0]?.stock_combinacion ?? 0;
         r.data_ie = stock?.[0]?.data_ie ?? null;
