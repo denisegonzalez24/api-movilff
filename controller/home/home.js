@@ -92,7 +92,7 @@ export async function home({ db, req }) {
     WHERE ot.elim = 0
       AND ot.superado = 0
       AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
-    ORDER BY ot.fecha_inicio ASC
+    ORDER BY ot.id DESC
     LIMIT 2;
   `;
 
@@ -120,7 +120,7 @@ export async function home({ db, req }) {
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
-        pp.tiene_ie,
+        pr.tiene_ie,
        
         pp.seller_sku,
         pr.posicion
@@ -146,10 +146,10 @@ export async function home({ db, req }) {
 
 
     for (const r of productosRows ?? []) {
-      if (tiene_ie == 1) {
+      if (productosRows.tiene_ie == 1) {
         const stock = await LightdataORM.select({
           db,
-          table: "stock_productos_detalle",
+          table: "stock_producto_detalle",
           where: { did_producto_variante_valor: r.did_producto_variante_valor },
           select: ["stock", data_ie]
         });
@@ -159,7 +159,7 @@ export async function home({ db, req }) {
       } else {
         const stock = await LightdataORM.select({
           db,
-          table: "stock_productos",
+          table: "stock_producto",
           where: { did_producto: r.did_producto },
           select: ["stock_combinacion"]
         });
@@ -179,7 +179,7 @@ export async function home({ db, req }) {
         did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
         foto: r.imagen ?? "assets/images/auri.jpg",
         stock: String(r.stock ?? "0"),
-        identificadores_especiales: r.data_ie, // lo completas con tu lógica actual
+        identificadores_especiales: r.data_ie ?? [], // lo completas con tu lógica actual
       });
     }
   }

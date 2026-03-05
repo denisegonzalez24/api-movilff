@@ -12,7 +12,7 @@ const pefiles = {
     4: "Cliente"
 
 }
-const ACCESS_TTL_SECONDS = 60 * 60 * 24; // 86400 (1 día)         // 15 minutos
+const ACCESS_TTL_SECONDS = 60; // 1 minuto // 86400 (1 día)         // 15 minutos
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
 // ✅ Hash fijo en Redis (como tu screenshot)
