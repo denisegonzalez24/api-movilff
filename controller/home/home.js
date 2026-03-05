@@ -116,10 +116,11 @@ export async function home({ db, req }) {
         pp.did_pedido,
         pp.did_producto,
         pp.codigo,
-        pp.imagen,
+        pr.imagen,
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
+       
         pp.seller_sku,
         pr.posicion
       FROM pedidos_productos pp
@@ -151,6 +152,7 @@ export async function home({ db, req }) {
         sku: String(r.seller_sku ?? ""),
         posicion: r.posicion ?? "",
         cantidad: String(r.cantidad ?? "0"),
+        did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
         foto: r.imagen ?? "assets/images/auri.jpg",
         identificadores_especiales: [], // lo completas con tu lógica actual
       });

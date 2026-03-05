@@ -4,6 +4,14 @@ import { companiesServiceFixed, jwtAudience, jwtIssuer, jwtSecret, redisClient }
 import { LightdataORMFix } from "../../src/ormFix.js";
 import { CompaniesServiceFixed } from "../../src/companiesServiceFix.js";
 
+const pefiles = {
+
+    1: "Administrador",
+    2: "Coordinador",
+    3: "Armador",
+    4: "Cliente"
+
+}
 const ACCESS_TTL_SECONDS = 60 * 60 * 24; // 86400 (1 día)         // 15 minutos
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
@@ -34,6 +42,10 @@ export async function login({ db, req }) {
     const { username, password, companyCode } = req.body;
 
 
+
+
+
+
     const [user] = await LightdataORMFix.select({
         db,
         table: "usuarios",
@@ -61,7 +73,7 @@ export async function login({ db, req }) {
 
 
     const company = await companiesServiceFixed.getByCode(companyCode);
-
+    const perfil = pefiles[user.perfil];
 
     const token = generateToken({
         jwtSecret,
@@ -84,7 +96,7 @@ export async function login({ db, req }) {
         companyId: company.did,
         userId: user.did,
         profile: user.perfil,
-        exp: Date.now() + REFRESH_TTL_SECONDS * 1000, // ✅ expiración por campo (manual)
+        exp: Date.now() + REFRESH_TTL_SECONDS * 1000,
     };
 
     // ✅ Guardar en HASH: key fija tokenFF, field=fp, value=session JSON
@@ -96,11 +108,13 @@ export async function login({ db, req }) {
         data: {
             user: {
                 did: String(user.did),
-                perfil: String(user.perfil),
+                perfil: String(perfil) || "Perfil desconocido",
                 nombre: user.nombre,
                 apellido: user.apellido,
                 email: user.email,
                 username: user.usuario,
+                nroPerfil: user.perfil,
+
                 imagen: user.imagen || null,
                 token,
                 refreshToken, // ✅ al cliente siempre le devolvés el token real
