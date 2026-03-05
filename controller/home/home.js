@@ -1,4 +1,4 @@
-import { executeQuery } from "lightdata-tools";
+import { executeQuery, LightdataORM } from "lightdata-tools";
 
 export async function home({ db, req }) {
   const user = req?.user ?? req?.usuario ?? null;
@@ -120,6 +120,7 @@ export async function home({ db, req }) {
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
+        pp.tiene_ie,
        
         pp.seller_sku,
         pr.posicion
@@ -141,7 +142,30 @@ export async function home({ db, req }) {
       log: true,
     });
 
+    // mapear stock por did_producto_variante_valor
+
+
     for (const r of productosRows ?? []) {
+      if (tiene_ie == 1) {
+        const stock = await LightdataORM.select({
+          db,
+          table: "stock_productos_detalle",
+          where: { did_producto_variante_valor: r.did_producto_variante_valor },
+          select: ["stock", data_ie]
+        });
+        //agregar a r el stock encontrado
+        r.stock = stock?.[0]?.stock_combinacion ?? 0;
+        r.data_ie = stock?.[0]?.data_ie ?? null;
+      } else {
+        const stock = await LightdataORM.select({
+          db,
+          table: "stock_productos",
+          where: { did_producto: r.did_producto },
+          select: ["stock_combinacion"]
+        });
+        r.stock = stock?.[0]?.stock_combinacion ?? 0;
+        r.data_ie = null;
+      }
       const key = String(r.did_pedido);
       if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
 
@@ -154,7 +178,8 @@ export async function home({ db, req }) {
         cantidad: String(r.cantidad ?? "0"),
         did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
         foto: r.imagen ?? "assets/images/auri.jpg",
-        identificadores_especiales: [], // lo completas con tu lógica actual
+        stock: String(r.stock ?? "0"),
+        identificadores_especiales: r.data_ie, // lo completas con tu lógica actual
       });
     }
   }
