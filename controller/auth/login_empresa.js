@@ -7,7 +7,7 @@ export async function loginEmpresa({ db, req }) {
     const { companyCode } = req.body;
 
     const company = await companiesService.getByCode(companyCode);
-    console.log(company);
+    // console.log(company);
 
     if (!company) {
         throw new CustomException({
@@ -31,7 +31,7 @@ export async function loginEmpresa({ db, req }) {
         log: true,
     });
 
-    console.log(identificadoresEspeciales);
+    //console.log(identificadoresEspeciales);
 
     if (!sistemaData) {
         throw new CustomException({
