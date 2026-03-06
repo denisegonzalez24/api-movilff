@@ -209,22 +209,43 @@ LIMIT 2
     }
   }
 
-  const pedidos_sugeridos = (sugeridos ?? []).map((s) => {
-    const pedidoKey = String(s.did_pedido ?? "");
-    return {
-      did: String(s.ot_did ?? ""),
-      id_venta: String(s.number ?? ""),
-      asignado: String(s.asignado ?? ""),
-      tienda: s.flex ?? "",
-      //  nombre: s.nombre ?? "",
-      fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
+  const otMap = new Map();
 
-      procesado: "0",
-      productos: productosPorPedido.get(pedidoKey) ?? [],
-      insumos: [], // lo completas con tu lógica actual
-      avisos: [], // lo completas con tu lógica actual
-    };
-  });
+  for (const s of sugeridos ?? []) {
+    const otKey = String(s.ot_did ?? "");
+    const pedidoKey = String(s.did_pedido ?? "");
+
+    if (!otMap.has(otKey)) {
+      otMap.set(otKey, {
+        did: otKey,
+        asignado: String(s.asignado ?? ""),
+        fecha: s.fecha_inicio ?? "",
+        procesado: "0",
+        pedidos: [],
+        insumos: [],
+        avisos: [],
+      });
+    }
+
+    const ot = otMap.get(otKey);
+
+    // Evitar repetir el mismo pedido si la query trajera duplicados
+    const yaExistePedido = ot.pedidos.some(
+      (p) => String(p.did_pedido) === pedidoKey
+    );
+
+    if (!yaExistePedido && pedidoKey) {
+      ot.pedidos.push({
+        did_pedido: pedidoKey,
+        id_venta: String(s.number ?? ""),
+        tienda: s.flex ?? "",
+        fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
+        productos: productosPorPedido.get(pedidoKey) ?? [],
+      });
+    }
+  }
+
+  const ot_sugeridas = Array.from(otMap.values());
 
   // --------------------
   // RESPONSE
@@ -233,14 +254,15 @@ LIMIT 2
     success: true,
     message: "Home PVs obtenida correctamente",
     data: {
-      total,
+      total_hoy: total,
       pendientes_total,
       completados_total,
-      pvs_hoy_total,
-      pendientes_por_asignado,
+      ot_urgentes: 0,
+
+      sin_asignar: pendientes_por_asignado,
 
       // nuevo formato:
-      pedidos_sugeridos,
+      ot_sugeridas,
     },
   };
 }
