@@ -223,7 +223,7 @@ LIMIT 2
         procesado: "0",
         pedidos: [],
         insumos: [],
-        avisos: [],
+
       });
     }
 
@@ -254,12 +254,14 @@ LIMIT 2
     success: true,
     message: "Home PVs obtenida correctamente",
     data: {
-      total_hoy: total,
-      pendientes_total,
-      completados_total,
-      ot_urgentes: 0,
+      total_hoy: String(total),
+      pendientes_total: String(pendientes_total),
+      completados_total: String(completados_total),
 
-      sin_asignar: pendientes_por_asignado,
+      ot_urgentes: "0",
+
+      sin_asignar: String(pendientes_por_asignado),
+      avisos: [],
 
       // nuevo formato:
       ot_sugeridas,
