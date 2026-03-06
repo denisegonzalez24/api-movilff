@@ -42,20 +42,17 @@ export async function home({ db, req }) {
   // --------------------
   // PENDIENTES POR ASIGNADO
   // --------------------
-  const porAsignadoSql = `
-    SELECT
-      COALESCE(CAST(asignado AS CHAR), 'sin_asignar') AS asignado,
-      COUNT(*) AS cantidad
-    FROM ordenes_trabajo
-    ${baseWhere}
-      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
-    GROUP BY asignado
-    ORDER BY cantidad DESC;
-  `;
+  const sinAsignarSql = `
+  SELECT COUNT(*) AS cantidad
+  FROM ordenes_trabajo
+  ${baseWhere}
+    AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+    AND (asignado IS NULL OR asignado = '' OR asignado = 0);
+`;
 
-  const pendientes_por_asignado = await executeQuery({
+  const [{ cantidad_sin_asignar = 0 } = {}] = await executeQuery({
     db,
-    query: porAsignadoSql,
+    query: sinAsignarSql.replace("COUNT(*) AS cantidad", "COUNT(*) AS cantidad_sin_asignar"),
     values: [...PENDIENTES],
     log: true,
   });
@@ -260,7 +257,7 @@ LIMIT 2
 
       ot_urgentes: "0",
 
-      sin_asignar: String(pendientes_por_asignado),
+      sin_asignar: String(cantidad_sin_asignar),
       avisos: [],
 
       // nuevo formato:
