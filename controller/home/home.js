@@ -147,31 +147,49 @@ LIMIT 2
 
     for (const r of productosRows ?? []) {
       if (r.tiene_ie == 1) {
-        console.log("entramos al iffff");
-
-
-
-        const stock = await LightdataORM.select({
+        const stockRows = await LightdataORM.select({
           db,
           table: "stock_producto_detalle",
           where: { did_producto_combinacion: r.did_producto_variante_valor },
           select: ["stock", "data_ie"],
-          log: true
+          log: true,
         });
 
+        const stockActual = stockRows?.[0]?.stock ?? 0;
+        let dataIE = stockRows?.[0]?.data_ie ?? [];
 
-        //agregar a r el stock encontrado
-        r.stock = stock?.[0]?.stock_combinacion ?? 0;
-        r.data_ie = stock?.[0]?.data_ie ?? null;
+        // Si viene como string JSON, lo parseamos
+        if (typeof dataIE === "string") {
+          try {
+            dataIE = JSON.parse(dataIE);
+          } catch (error) {
+            dataIE = [];
+          }
+        }
+
+        // Aseguramos que sea array
+        if (!Array.isArray(dataIE)) {
+          dataIE = [];
+        }
+
+        // A cada identificador especial le agregamos el stock
+        dataIE = dataIE.map((item) => ({
+          ...item,
+          stock: stockActual,
+        }));
+
+        r.stock = stockActual;
+        r.data_ie = dataIE;
       } else {
-        const stock = await LightdataORM.select({
+        const stockRows = await LightdataORM.select({
           db,
           table: "stock_producto",
           where: { did_producto: r.did_producto },
-          select: ["stock_combinacion"]
+          select: ["stock_combinacion"],
         });
-        r.stock = stock?.[0]?.stock_combinacion ?? 0;
-        r.data_ie = null;
+
+        r.stock = stockRows?.[0]?.stock_combinacion ?? 0;
+        r.data_ie = [];
       }
       const key = String(r.did_pedido);
       if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
