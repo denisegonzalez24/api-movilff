@@ -1,6 +1,7 @@
 // egresoStockArmadoGlobal.js
 import { CustomException, LightdataORM } from "lightdata-tools";
-import { createRemito } from "../controller/remito/crear_remito";
+import { createRemito } from "../controller/remito/crear_remito.js";
+
 
 
 /**

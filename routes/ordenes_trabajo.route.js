@@ -7,6 +7,7 @@ import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
 import { getFilteredOrdenesTrabajoByClienteFiltered } from "../controller/orden-trabajo/getOrdenDeTrabajo.js";
 import { desasignarOrdenTrabajo } from "../controller/orden-trabajo/desasignar.js";
 import { asignarOrdenTrabajo } from "../controller/orden-trabajo/asignar.js";
+import { armar } from "../controller/orden-trabajo/armar.js";
 
 const ordenes = Router();
 
@@ -33,6 +34,15 @@ ordenes.put(
     buildHandlerWrapper({
         requiredParams: ["did"],
         controller: ({ db, req }) => desasignarOrdenTrabajo({ db, req }),
+    })
+);
+
+ordenes.put(
+    "/armar/:did",
+    buildHandlerWrapper({
+        requiredParams: ["did"],
+        required: ["productos"],
+        controller: ({ db, req }) => armar({ db, req }),
     })
 );
 /*

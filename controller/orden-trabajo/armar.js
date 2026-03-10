@@ -1,5 +1,5 @@
 import { LightdataORM } from "lightdata-tools";
-import { egresarStock } from "../../src/egresar_stock";
+import { egresarStock } from "../../src/egresar_stock.js";
 
 
 export async function armar({ db, req }) {
