@@ -63,35 +63,38 @@ export async function home({ db, req }) {
   // 2) Traemos TODOS los productos de esos pedidos y los agrupamos
   // --------------------
   const sugeridosSql = `
-    SELECT
-      ot.did AS ot_did,
-      ot.estado,
-      ot.asignado,
-      ot.fecha_inicio,
-      ot.fecha_fin,
-      ot.alertada,
+  SELECT
+    ot.did AS ot_did,
+    ot.estado,
+    ot.asignado,
+    ot.fecha_inicio,
+    ot.fecha_fin,
+    ot.alertada,
+    u.nombre AS asignado_nombre,
 
-      otp.did_pedido,
+    otp.did_pedido,
 
-      p.number,
-      p.flex,
-  
-      p.fecha_venta AS fecha_pedido
-    FROM ordenes_trabajo ot
-    LEFT JOIN ordenes_trabajo_pedidos otp
-      ON otp.did_orden_trabajo = ot.did
-     AND otp.elim = 0
-     AND otp.superado = 0
-    LEFT JOIN pedidos p
-      ON p.did = otp.did_pedido
-     AND p.elim = 0
-     AND p.superado = 0
-    WHERE ot.elim = 0
-      AND ot.superado = 0
-      AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
-    ORDER BY ot.id DESC
-LIMIT 2
-  `;
+    p.number,
+    p.flex,
+
+    p.fecha_venta AS fecha_pedido
+  FROM ordenes_trabajo ot
+  LEFT JOIN ordenes_trabajo_pedidos otp
+    ON otp.did_orden_trabajo = ot.did 
+   AND otp.elim = 0
+   AND otp.superado = 0
+  LEFT JOIN usuarios u
+    ON u.did = ot.asignado and u.superado = 0 and u.elim = 0
+  LEFT JOIN pedidos p
+    ON p.did = otp.did_pedido 
+   AND p.elim = 0
+   AND p.superado = 0
+  WHERE ot.elim = 0
+    AND ot.superado = 0
+    AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
+  ORDER BY ot.id DESC
+  LIMIT 2
+`;
 
   const sugeridos = await executeQuery({
     db,
@@ -216,6 +219,7 @@ LIMIT 2
       otMap.set(otKey, {
         did: otKey,
         asignado: String(s.asignado ?? ""),
+        nombre_asignado: s.asignado_nombre ?? "",
         fecha: s.fecha_inicio ?? "",
         procesado: "0",
         pedidos: [],
