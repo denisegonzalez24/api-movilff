@@ -57,7 +57,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     const estadosQuery = parseCsvNums(q.estado);
     const estadosPermitidos = Array.isArray(estadosQuery)
-        ? estadosQuery.filter((x) => Number(x) !== 3)
+        ? estadosQuery.filter((x) => Number(x) != 3)
         : undefined;
 
     const filtros = {
