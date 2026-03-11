@@ -151,14 +151,14 @@ export async function home({ db, req }) {
           db,
           table: "stock_producto_detalle",
           where: { did_producto_combinacion: r.did_producto_variante_valor },
-          select: ["stock", "data_ie"],
+          select: ["did", "stock", "data_ie"],
           log: true,
         });
 
         const stockActual = stockRows?.[0]?.stock ?? 0;
+        const didStock = stockRows?.[0]?.did ?? 0;
         let dataIE = stockRows?.[0]?.data_ie ?? [];
 
-        // Si viene como string JSON, lo parseamos
         if (typeof dataIE === "string") {
           try {
             dataIE = JSON.parse(dataIE);
@@ -167,15 +167,14 @@ export async function home({ db, req }) {
           }
         }
 
-        // Aseguramos que sea array
         if (!Array.isArray(dataIE)) {
           dataIE = [];
         }
 
-        // A cada identificador especial le agregamos el stock
         dataIE = dataIE.map((item) => ({
           ...item,
           stock: stockActual,
+          did_stock: String(didStock),
         }));
 
         r.stock = stockActual;
@@ -191,6 +190,7 @@ export async function home({ db, req }) {
         r.stock = stockRows?.[0]?.stock_combinacion ?? 0;
         r.data_ie = [];
       }
+
       const key = String(r.did_pedido);
       if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
 
@@ -204,11 +204,10 @@ export async function home({ db, req }) {
         did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
         foto: r.imagen ?? "assets/images/auri.jpg",
         stock: String(r.stock ?? "0"),
-        identificadores_especiales: r.data_ie ?? [], // lo completas con tu lógica actual
+        identificadores_especiales: r.data_ie ?? [],
       });
     }
   }
-
   const otMap = new Map();
 
   for (const s of sugeridos ?? []) {

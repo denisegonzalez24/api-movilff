@@ -4,7 +4,7 @@ import { Router } from "express";
 
 
 import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
-import { getFilteredOrdenesTrabajoByClienteFiltered } from "../controller/orden-trabajo/getOrdenDeTrabajo.js";
+import { getOrdenesTrabajoByUsuario } from "../controller/orden-trabajo/getOrdenDeTrabajo.js";
 import { desasignarOrdenTrabajo } from "../controller/orden-trabajo/desasignar.js";
 import { asignarOrdenTrabajo } from "../controller/orden-trabajo/asignar.js";
 import { armar } from "../controller/orden-trabajo/armar.js";
@@ -16,7 +16,7 @@ const ordenes = Router();
 ordenes.get(
     "/",
     buildHandlerWrapper({
-        controller: async ({ db, req }) => getFilteredOrdenesTrabajoByClienteFiltered({ db, req }),
+        controller: async ({ db, req }) => getOrdenesTrabajoByUsuario({ db, req, userId: req.user.userId, profile: req.user.profile }),
     })
 );
 

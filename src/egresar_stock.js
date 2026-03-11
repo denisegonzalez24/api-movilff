@@ -140,7 +140,7 @@ export async function egresarStock({
                             const rowsDet = await LightdataORM.select({
                                 db,
                                 table: "stock_producto_detalle",
-                                where: { did: det.did },
+                                where: { did: det.did_stock },
                                 throwIfNotExists: true,
                             });
 
@@ -149,7 +149,7 @@ export async function egresarStock({
                             await LightdataORM.update({
                                 db,
                                 table: "stock_producto_detalle",
-                                where: { did: det.did },
+                                where: { did: det.did_stock },
                                 data: {
                                     stock: vigenteDet.stock - det.cantidad,
                                     tipo: "EGRESO",

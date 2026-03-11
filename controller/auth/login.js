@@ -4,7 +4,7 @@ import { companiesServiceFixed, jwtAudience, jwtIssuer, jwtSecret, redisClient }
 import { LightdataORMFix } from "../../src/ormFix.js";
 import { CompaniesServiceFixed } from "../../src/companiesServiceFix.js";
 
-const pefiles = {
+export const pefiles = {
 
     1: "Administrador",
     2: "Coordinador",
@@ -12,7 +12,7 @@ const pefiles = {
     4: "Cliente"
 
 }
-const ACCESS_TTL_SECONDS = 15 * 60; // 1 minuto // 86400 (1 día)         // 15 minutos
+const ACCESS_TTL_SECONDS = 60 * 15 * 60; // 1 minuto // 86400 (1 día)         // 15 minutos
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
 // ✅ Hash fijo en Redis (como tu screenshot)
