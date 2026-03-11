@@ -5,7 +5,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const q = req.query || {};
     const perfilNum = Number(profile);
 
-    const ESTADOS_EXCLUIDOS = [3, 4];
+    const ESTADOS_SIEMPRE_EXCLUIDOS = [4];
 
     const parseCsvNums = (v) => {
         if (v === "sin_asignar") return null;
@@ -58,8 +58,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     };
 
     const estadosQuery = parseCsvNums(q.estado);
+
+    // Si mandan estado por query:
+    // - se permite 3
+    // - se bloquea 4
+    // Si NO mandan estado:
+    // - por default se excluye 3 y 4
     const estadosPermitidos = Array.isArray(estadosQuery)
-        ? estadosQuery.filter((x) => !ESTADOS_EXCLUIDOS.includes(Number(x)))
+        ? estadosQuery.filter((x) => Number(x) !== 4)
         : undefined;
 
     const filtros = {
@@ -112,12 +118,17 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         .add("ot.elim = 0")
         .add("ot.superado = 0")
         .add("ot.estado IS NOT NULL")
-        .add(`ot.estado NOT IN (${ESTADOS_EXCLUIDOS.map(() => "?").join(",")})`, ...ESTADOS_EXCLUIDOS)
+        .add("ot.estado <> 4")
         .add("otp.elim = 0")
         .add("otp.superado = 0")
         .add("p.elim = 0")
         .add("p.superado = 0")
         .add("p.did_cliente IS NOT NULL");
+
+    // Si NO mandan estado en query, excluir también el 3 por default
+    if (!Array.isArray(estadosQuery) || !estadosQuery.length) {
+        where.add("ot.estado <> 3");
+    }
 
     if (filtros.did_cliente?.length) where.in("p.did_cliente", filtros.did_cliente);
     if (filtros.estado?.length) where.in("ot.estado", filtros.estado);
@@ -209,9 +220,18 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         log: true,
     });
 
-    const ordenesRows = (ordenesRowsRaw ?? []).filter(
-        (row) => !ESTADOS_EXCLUIDOS.includes(Number(row?.estado))
-    );
+    const ordenesRows = (ordenesRowsRaw ?? []).filter((row) => {
+        const estado = Number(row?.estado);
+
+        if (estado === 4) return false;
+
+        // si no mandaron estado por query, ocultar 3
+        if ((!Array.isArray(estadosQuery) || !estadosQuery.length) && estado === 3) {
+            return false;
+        }
+
+        return true;
+    });
 
     const didPedidos = Array.from(
         new Set(
@@ -354,9 +374,17 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
     }
 
-    const data = Array.from(otMap.values()).filter(
-        (ot) => !ESTADOS_EXCLUIDOS.includes(Number(ot?.estado))
-    );
+    const data = Array.from(otMap.values()).filter((ot) => {
+        const estado = Number(ot?.estado);
+
+        if (estado === 4) return false;
+
+        if ((!Array.isArray(estadosQuery) || !estadosQuery.length) && estado === 3) {
+            return false;
+        }
+
+        return true;
+    });
 
     return {
         success: true,
