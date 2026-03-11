@@ -170,7 +170,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
     } else {
         if (perfilNum === 3) {
-            where.add("ot.quien = ?", userId);
+            where.add("ot.asignado = ?", userId);
         }
     }
 
