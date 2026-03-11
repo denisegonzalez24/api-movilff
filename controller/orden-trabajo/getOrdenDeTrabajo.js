@@ -59,8 +59,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         did_cliente: parseCsvNums(q.did_cliente),
         estado: parseCsvNums(q.estado),
         asignado: parseAsignado(q.asignado),
-        origen: parseCsvNums(q.origen),
-
+        tienda: parseCsvNums(q.tienda),
         alertada: (() => {
             const v = q.alertada;
             if (v === undefined || v === null || v === "") return undefined;
@@ -87,10 +86,9 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         fecha: "ot.fecha_inicio",
         id_venta: "p.number",
         estado: "ot.estado",
-        origen: "p.flex",
+        tienda: "p.flex",
         asignado: "ot.asignado",
     };
-
     const { orderSql } = makeSort(qp, sortMap, {
         defaultKey: "fecha",
         byKey: "sort_by",
@@ -159,7 +157,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
     }
 
-    if (filtros.origen?.length) where.in("p.flex", filtros.origen);
+    if (filtros.tienda?.length) where.in("p.flex", filtros.tienda);
 
     if (filtros.alertada === 1) where.eq("ot.alertada", 1);
     else if (filtros.alertada === 0) where.eq("ot.alertada", 0);
