@@ -57,7 +57,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     const estadosQuery = parseCsvNums(q.estado);
     const estadosPermitidos = Array.isArray(estadosQuery)
-        ? estadosQuery.filter((x) => Number(x) != 3)
+        ? estadosQuery.filter((x) => Number(x) != 4)
         : undefined;
 
     const filtros = {
@@ -112,7 +112,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const where = new SqlWhere()
         .add("ot.elim = 0")
         .add("ot.superado = 0")
-        .add("ot.estado <> 3")
+        .add("ot.estado <> 4")
         .add("otp.elim = 0")
         .add("otp.superado = 0")
         .add("p.elim = 0")
