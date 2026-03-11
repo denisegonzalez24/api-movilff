@@ -55,9 +55,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         sort_dir: q.sort_dir ?? q.sortDir,
     };
 
+    const estadosQuery = parseCsvNums(q.estado);
+    const estadosPermitidos = Array.isArray(estadosQuery)
+        ? estadosQuery.filter((x) => Number(x) !== 3)
+        : undefined;
+
     const filtros = {
         did_cliente: parseCsvNums(q.did_cliente),
-        estado: parseCsvNums(q.estado),
+        estado: estadosPermitidos,
         asignado: parseAsignado(q.asignado),
         tienda: parseCsvNums(q.tienda),
         alertada: (() => {
@@ -89,6 +94,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         tienda: "p.flex",
         asignado: "ot.asignado",
     };
+
     const { orderSql } = makeSort(qp, sortMap, {
         defaultKey: "fecha",
         byKey: "sort_by",
