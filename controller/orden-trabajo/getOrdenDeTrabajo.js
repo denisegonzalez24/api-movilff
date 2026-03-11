@@ -136,6 +136,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     if (filtros.asignado) {
         const { includeNull, values } = filtros.asignado;
 
+        // Admin / Coordinador -> ven todo según filtro
         if (perfilNum === 1 || perfilNum === 2) {
             if (includeNull && values.length) {
                 where.add(
@@ -147,30 +148,48 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             } else if (values.length) {
                 where.in("ot.asignado", values);
             }
-        } else if (perfilNum === 3) {
+        }
+
+        // Armador -> asignadas a mí y/o no asignadas según query
+        else if (perfilNum === 3) {
             if (includeNull && values.length) {
-                where.add(
-                    `(
-                        (ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)
-                        OR
-                        (ot.quien = ? AND ot.asignado IN (${values.map(() => "?").join(",")}))
-                    )`,
-                    userId,
-                    ...values
-                );
+                const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
+
+                if (valuesFiltrados.length) {
+                    where.add(
+                        `(
+                            (ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)
+                            OR
+                            ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")})
+                        )`,
+                        ...valuesFiltrados
+                    );
+                } else {
+                    where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                }
             } else if (includeNull) {
                 where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
             } else if (values.length) {
-                where.add(
-                    `(ot.quien = ? AND ot.asignado IN (${values.map(() => "?").join(",")}))`,
-                    userId,
-                    ...values
-                );
+                const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
+
+                if (valuesFiltrados.length) {
+                    where.in("ot.asignado", valuesFiltrados);
+                } else {
+                    // si mandó asignados pero ninguno es él, no debe traer nada
+                    where.add("1 = 0");
+                }
             }
         }
     } else {
+        // SIN filtro asignado
         if (perfilNum === 3) {
-            where.add("ot.asignado = ?", userId);
+            // perfil 3 ve por defecto:
+            // - asignadas a él
+            // - no asignadas
+            where.add(
+                `(ot.asignado = ? OR ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)`,
+                userId
+            );
         }
     }
 
@@ -225,7 +244,6 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
         if (estado === 4) return false;
 
-        // si no mandaron estado por query, ocultar 3
         if ((!Array.isArray(estadosQuery) || !estadosQuery.length) && estado === 3) {
             return false;
         }
