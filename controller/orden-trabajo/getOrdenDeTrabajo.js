@@ -5,6 +5,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const q = req.query || {};
     const perfilNum = Number(profile);
 
+    const ESTADOS_EXCLUIDOS = [3, 4];
+
     const parseCsvNums = (v) => {
         if (v === "sin_asignar") return null;
 
@@ -57,7 +59,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     const estadosQuery = parseCsvNums(q.estado);
     const estadosPermitidos = Array.isArray(estadosQuery)
-        ? estadosQuery.filter((x) => Number(x) != 4)
+        ? estadosQuery.filter((x) => !ESTADOS_EXCLUIDOS.includes(Number(x)))
         : undefined;
 
     const filtros = {
@@ -72,17 +74,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             if (v === false || v === "false" || v === 0 || v === "0") return 0;
             return toBool01(v, undefined);
         })(),
-
         fecha_from:
             typeof q.fecha_from === "string" && q.fecha_from.trim()
                 ? `${q.fecha_from.trim()} 00:00:00`
                 : undefined,
-
         fecha_to:
             typeof q.fecha_to === "string" && q.fecha_to.trim()
                 ? `${q.fecha_to.trim()} 23:59:59`
                 : undefined,
-
         id_venta: typeof q.id_venta === "string" ? q.id_venta.trim() : undefined,
     };
 
@@ -112,7 +111,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const where = new SqlWhere()
         .add("ot.elim = 0")
         .add("ot.superado = 0")
-        .add("ot.estado <> 4")
+        .add("ot.estado IS NOT NULL")
+        .add(`ot.estado NOT IN (${ESTADOS_EXCLUIDOS.map(() => "?").join(",")})`, ...ESTADOS_EXCLUIDOS)
         .add("otp.elim = 0")
         .add("otp.superado = 0")
         .add("p.elim = 0")
@@ -184,14 +184,11 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             ot.fecha_fin,
             ot.alertada,
             u.nombre AS asignado_nombre,
-
             otp.did_pedido,
-
             p.did AS pedido_did,
             p.number,
             p.flex,
             p.fecha_venta AS fecha_pedido
-
         FROM ordenes_trabajo ot
         LEFT JOIN ordenes_trabajo_pedidos otp
             ON otp.did_orden_trabajo = ot.did
@@ -205,16 +202,20 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         ${orderSql}, ot.did ASC, p.did ASC
     `;
 
-    const ordenesRows = await executeQuery({
+    const ordenesRowsRaw = await executeQuery({
         db,
         query: ordenesSql,
         values: params,
         log: true,
     });
 
+    const ordenesRows = (ordenesRowsRaw ?? []).filter(
+        (row) => !ESTADOS_EXCLUIDOS.includes(Number(row?.estado))
+    );
+
     const didPedidos = Array.from(
         new Set(
-            (ordenesRows ?? [])
+            ordenesRows
                 .map((x) => x?.did_pedido)
                 .filter(Boolean)
         )
@@ -319,15 +320,15 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     const otMap = new Map();
 
-    for (const s of ordenesRows ?? []) {
+    for (const s of ordenesRows) {
         const otKey = String(s.ot_did ?? "");
         const pedidoKey = String(s.did_pedido ?? "");
 
         if (!otMap.has(otKey)) {
             otMap.set(otKey, {
                 did: otKey,
+                estado: String(s.estado ?? ""),
                 asignado: String(s.asignado ?? ""),
-                estado: String(s.estado ?? "0"),
                 nombre_asignado: s.asignado_nombre ?? "",
                 fecha: s.fecha_inicio ?? "",
                 procesado: "0",
@@ -353,7 +354,9 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
     }
 
-    const data = Array.from(otMap.values());
+    const data = Array.from(otMap.values()).filter(
+        (ot) => !ESTADOS_EXCLUIDOS.includes(Number(ot?.estado))
+    );
 
     return {
         success: true,
