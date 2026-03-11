@@ -327,6 +327,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             otMap.set(otKey, {
                 did: otKey,
                 asignado: String(s.asignado ?? ""),
+                estado: String(s.estado ?? "0"),
                 nombre_asignado: s.asignado_nombre ?? "",
                 fecha: s.fecha_inicio ?? "",
                 procesado: "0",
