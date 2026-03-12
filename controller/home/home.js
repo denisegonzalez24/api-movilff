@@ -219,6 +219,7 @@ export async function home({ db, req }) {
       otMap.set(otKey, {
         did: otKey,
         asignado: String(s.asignado ?? ""),
+        estado: String(s.estado ?? ""),
         nombre_asignado: s.asignado_nombre ?? "",
         fecha: s.fecha_inicio ?? "",
         procesado: "0",
