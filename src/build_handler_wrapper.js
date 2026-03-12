@@ -1,5 +1,5 @@
 import { buildHandler, getFFProductionDbConfig } from "lightdata-tools";
-import { companiesServiceTMS, hostFulFillement, portFulFillement } from "../db.js";
+import { companiesServiceFixed, companiesServiceTMS, hostFulFillement, portFulFillement } from "../db.js";
 
 
 export function buildHandlerWrapper({
@@ -19,7 +19,7 @@ export function buildHandlerWrapper({
         headers,
         status,
         controller,
-        companyResolver: companyResolver2 || (({ req }) => companiesServiceTMS.getById(req.user.companyId)),
+        companyResolver: companyResolver2 || (({ req }) => companiesServiceFixed.getById(req.user.companyId)),
         getDbConfig: getDbConfig2 || (({ company }) => getFFProductionDbConfig({ companyId: company.did, host: hostFulFillement, port: portFulFillement })),
         log: log || (() => { }),
         pool,
