@@ -91,6 +91,7 @@ export async function home({ db, req }) {
    AND p.superado = 0
   WHERE ot.elim = 0
     AND ot.superado = 0
+    
     AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
   ORDER BY ot.id DESC
   LIMIT 2
@@ -202,7 +203,7 @@ export async function home({ db, req }) {
         posicion: r.posicion ?? "",
         cantidad: String(r.cantidad ?? "0"),
         did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
-        foto: r.imagen ?? "assets/images/auri.jpg",
+        foto: r.imagen ?? "https://files.lightdata.app/fulfillment/270/usuarios/1/img_1765386930_5659.png",
         stock: String(r.stock ?? "0"),
         identificadores_especiales: r.data_ie ?? [],
       });

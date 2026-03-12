@@ -349,7 +349,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 posicion: r.posicion ?? "",
                 cantidad: String(r.cantidad ?? "0"),
                 did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
-                foto: r.imagen ?? "assets/images/auri.jpg",
+                foto: r.imagen ?? "https://files.lightdata.app/fulfillment/270/usuarios/1/img_1765386930_5659.png",
                 stock: String(r.stock ?? "0"),
                 identificadores_especiales: r.data_ie ?? [],
             });
