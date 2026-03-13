@@ -163,7 +163,7 @@ export async function home({ db, req }) {
         if (typeof dataIE === "string") {
           try {
             dataIE = JSON.parse(dataIE);
-          } catch (error) {
+          } catch {
             dataIE = [];
           }
         }
@@ -174,13 +174,17 @@ export async function home({ db, req }) {
 
         dataIE = dataIE.map((item) => ({
           ...item,
-          did: String(item.did),
-          stock: String(stockActual),
-          did_stock: String(didStock),
+          did: String(item?.did ?? ""),
         }));
 
         r.stock = stockActual;
-        r.data_ie = dataIE;
+        r.data_ie = [
+          {
+            did_stock: String(didStock),
+            stock: String(stockActual),
+            data_ie: dataIE,
+          }
+        ];
       } else {
         const stockRows = await LightdataORM.select({
           db,

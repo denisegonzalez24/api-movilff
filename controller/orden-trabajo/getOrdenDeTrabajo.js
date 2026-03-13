@@ -320,13 +320,17 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
                 dataIE = dataIE.map((item) => ({
                     ...item,
-                    did: String(item.did),
-                    stock: String(stockActual),
-                    did_stock: String(didStock),
+                    did: String(item?.did ?? ""),
                 }));
 
                 r.stock = stockActual;
-                r.data_ie = dataIE;
+                r.data_ie = [
+                    {
+                        did_stock: String(didStock),
+                        stock: String(stockActual),
+                        data_ie: dataIE,
+                    }
+                ];
             } else {
                 const stockRows = await LightdataORM.select({
                     db,
