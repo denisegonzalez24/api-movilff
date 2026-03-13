@@ -21,7 +21,7 @@ ordenes.get(
 );
 
 ordenes.put(
-    "/:did/asignar",
+    "/asignar/:did",
     buildHandlerWrapper({
         requiredParams: ["did"],
         optional: ["did_usuario"],
