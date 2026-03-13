@@ -174,7 +174,8 @@ export async function home({ db, req }) {
 
         dataIE = dataIE.map((item) => ({
           ...item,
-          stock: stockActual,
+          did: String(item.did),
+          stock: String(stockActual),
           did_stock: String(didStock),
         }));
 
@@ -209,6 +210,7 @@ export async function home({ db, req }) {
       });
     }
   }
+
   const otMap = new Map();
 
   for (const s of sugeridos ?? []) {

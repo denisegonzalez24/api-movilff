@@ -320,6 +320,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
                 dataIE = dataIE.map((item) => ({
                     ...item,
+                    did: String(item.did),
                     stock: stockActual,
                     did_stock: String(didStock),
                 }));
