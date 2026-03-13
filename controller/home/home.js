@@ -156,35 +156,37 @@ export async function home({ db, req }) {
           log: true,
         });
 
-        const stockActual = stockRows?.[0]?.stock ?? 0;
-        const didStock = stockRows?.[0]?.did ?? 0;
-        let dataIE = stockRows?.[0]?.data_ie ?? [];
+        const identificadoresEspeciales = (stockRows ?? []).map((row) => {
+          let dataIE = row?.data_ie ?? [];
 
-        if (typeof dataIE === "string") {
-          try {
-            dataIE = JSON.parse(dataIE);
-          } catch {
+          if (typeof dataIE === "string") {
+            try {
+              dataIE = JSON.parse(dataIE);
+            } catch {
+              dataIE = [];
+            }
+          }
+
+          if (!Array.isArray(dataIE)) {
             dataIE = [];
           }
-        }
 
-        if (!Array.isArray(dataIE)) {
-          dataIE = [];
-        }
+          dataIE = dataIE.map((item) => ({
+            ...item,
+            did: String(item?.did ?? ""),
+          }));
 
-        dataIE = dataIE.map((item) => ({
-          ...item,
-          did: String(item?.did ?? ""),
-        }));
-
-        r.stock = stockActual;
-        r.data_ie = [
-          {
-            did_stock: String(didStock),
-            stock: String(stockActual),
+          return {
+            did_stock: String(row?.did ?? ""),
+            stock: String(row?.stock ?? "0"),
             data_ie: dataIE,
-          }
-        ];
+          };
+        });
+
+        r.stock = String(
+          (stockRows ?? []).reduce((acc, row) => acc + Number(row?.stock ?? 0), 0)
+        );
+        r.data_ie = identificadoresEspeciales;
       } else {
         const stockRows = await LightdataORM.select({
           db,
