@@ -41,6 +41,7 @@ ordenes.put(
     "/desestimar/:did",
     buildHandlerWrapper({
         requiredParams: ["did"],
+        optional: ["did_usuario", "motivo"],
         controller: ({ db, req }) => desestimarOrdenTrabajo({ db, req }),
     })
 );
