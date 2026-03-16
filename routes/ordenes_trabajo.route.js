@@ -8,6 +8,7 @@ import { getOrdenesTrabajoByUsuario } from "../controller/orden-trabajo/getOrden
 import { desasignarOrdenTrabajo } from "../controller/orden-trabajo/desasignar.js";
 import { asignarOrdenTrabajo } from "../controller/orden-trabajo/asignar.js";
 import { armar } from "../controller/orden-trabajo/armar.js";
+import { desestimarOrdenTrabajo } from "../controller/orden-trabajo/desestimar.js";
 
 const ordenes = Router();
 
@@ -30,10 +31,17 @@ ordenes.put(
 );
 
 ordenes.put(
-    "/:did/desasignar",
+    "/desasignar/:did",
     buildHandlerWrapper({
         requiredParams: ["did"],
         controller: ({ db, req }) => desasignarOrdenTrabajo({ db, req }),
+    })
+);
+ordenes.put(
+    "/desestimar/:did",
+    buildHandlerWrapper({
+        requiredParams: ["did"],
+        controller: ({ db, req }) => desestimarOrdenTrabajo({ db, req }),
     })
 );
 
