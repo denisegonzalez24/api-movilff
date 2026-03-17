@@ -13,82 +13,123 @@ export async function home({ db, req, userId, profile }) {
   const esPerfilTres = perfil == 3;
 
   // --------------------
-  // WHERE BASE DINÁMICO
-  // TODOS los count y sum solo del día de hoy
+  // TOTAL HOY
+  // perfil 3 => solo las mías
   // --------------------
-  let baseWhere = `
+  let totalHoySql = `
+    SELECT COUNT(*) AS total_hoy
+    FROM ordenes_trabajo
     WHERE elim = 0
       AND superado = 0
       AND DATE(fecha_inicio) = CURDATE()
   `;
 
-  const baseValues = [];
+  const totalHoyValues = [];
 
   if (esPerfilTres) {
-    baseWhere += `
-      AND asignado = ?
-    `;
-    baseValues.push(didUsuario);
+    totalHoySql += ` AND asignado = ?`;
+    totalHoyValues.push(didUsuario);
   }
 
-  // --------------------
-  // TOTALES
-  // --------------------
-  const totalsSql = `
-    SELECT
-      COUNT(*) AS total,
-      SUM(CASE WHEN estado IN (${PENDIENTES.map(() => "?").join(",")}) THEN 1 ELSE 0 END) AS pendientes_total,
-      SUM(CASE WHEN estado IN (${COMPLETADOS.map(() => "?").join(",")}) THEN 1 ELSE 0 END) AS completados_total,
-      COUNT(*) AS pvs_hoy_total
-    FROM ordenes_trabajo
-    ${baseWhere};
-  `;
-
-  const [
-    {
-      total = 0,
-      pendientes_total = 0,
-      completados_total = 0,
-      pvs_hoy_total = 0,
-    } = {},
-  ] = await executeQuery({
+  const [totalHoyRow = {}] = await executeQuery({
     db,
-    query: totalsSql,
-    values: [...PENDIENTES, ...COMPLETADOS, ...baseValues],
+    query: totalHoySql,
+    values: totalHoyValues,
     log: true,
   });
 
-  // --------------------
-  // PENDIENTES SIN ASIGNAR
-  // Solo tiene sentido para perfiles != 3
-  // Y también solo de hoy
-  // --------------------
-  let cantidad_sin_asignar = 0;
+  const total_hoy = Number(totalHoyRow?.total_hoy ?? 0);
 
-  if (!esPerfilTres) {
-    const sinAsignarSql = `
-      SELECT COUNT(*) AS cantidad_sin_asignar
-      FROM ordenes_trabajo
-      WHERE elim = 0
-        AND superado = 0
-        AND DATE(fecha_inicio) = CURDATE()
-        AND estado IN (${PENDIENTES.map(() => "?").join(",")})
-        AND (asignado IS NULL OR asignado = '' OR asignado = 0);
+  // --------------------
+  // PENDIENTES TOTAL
+  // perfil 3 => asignadas a mí + sin asignar
+  // --------------------
+  let pendientesSql = `
+    SELECT COUNT(*) AS pendientes_total
+    FROM ordenes_trabajo
+    WHERE elim = 0
+      AND superado = 0
+      AND DATE(fecha_inicio) = CURDATE()
+      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+  `;
+
+  const pendientesValues = [...PENDIENTES];
+
+  if (esPerfilTres) {
+    pendientesSql += `
+      AND (
+        asignado = ?
+        OR asignado IS NULL
+        OR asignado = ''
+        OR asignado = 0
+      )
     `;
-
-    const [sinAsignarRow = {}] = await executeQuery({
-      db,
-      query: sinAsignarSql,
-      values: [...PENDIENTES],
-      log: true,
-    });
-
-    cantidad_sin_asignar = Number(sinAsignarRow?.cantidad_sin_asignar ?? 0);
+    pendientesValues.push(didUsuario);
   }
 
+  const [pendientesRow = {}] = await executeQuery({
+    db,
+    query: pendientesSql,
+    values: pendientesValues,
+    log: true,
+  });
+
+  const pendientes_total = Number(pendientesRow?.pendientes_total ?? 0);
+
   // --------------------
-  // PEDIDOS SUGERIDOS (2 OT más recientes pendientes de hoy)
-  // Si perfil = 3, solo las asignadas al usuario
+  // COMPLETADOS TOTAL
+  // perfil 3 => solo las mías
+  // --------------------
+  let completadosSql = `
+    SELECT COUNT(*) AS completados_total
+    FROM ordenes_trabajo
+    WHERE elim = 0
+      AND superado = 0
+      AND DATE(fecha_inicio) = CURDATE()
+      AND estado IN (${COMPLETADOS.map(() => "?").join(",")})
+  `;
+
+  const completadosValues = [...COMPLETADOS];
+
+  if (esPerfilTres) {
+    completadosSql += ` AND asignado = ?`;
+    completadosValues.push(didUsuario);
+  }
+
+  const [completadosRow = {}] = await executeQuery({
+    db,
+    query: completadosSql,
+    values: completadosValues,
+    log: true,
+  });
+
+  const completados_total = Number(completadosRow?.completados_total ?? 0);
+
+  // --------------------
+  // PENDIENTES SIN ASIGNAR
+  // --------------------
+  const sinAsignarSql = `
+    SELECT COUNT(*) AS cantidad_sin_asignar
+    FROM ordenes_trabajo
+    WHERE elim = 0
+      AND superado = 0
+      AND DATE(fecha_inicio) = CURDATE()
+      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+      AND (asignado IS NULL OR asignado = '' OR asignado = 0);
+  `;
+
+  const [sinAsignarRow = {}] = await executeQuery({
+    db,
+    query: sinAsignarSql,
+    values: [...PENDIENTES],
+    log: true,
+  });
+
+  const cantidad_sin_asignar = Number(sinAsignarRow?.cantidad_sin_asignar ?? 0);
+
+  // --------------------
+  // PEDIDOS SUGERIDOS
+  // perfil 3 => asignadas a mí + sin asignar
   // --------------------
   let sugeridosWhere = `
     WHERE ot.elim = 0
@@ -101,7 +142,12 @@ export async function home({ db, req, userId, profile }) {
 
   if (esPerfilTres) {
     sugeridosWhere += `
-      AND ot.asignado = ?
+      AND (
+        ot.asignado = ?
+        OR ot.asignado IS NULL
+        OR ot.asignado = ''
+        OR ot.asignado = 0
+      )
     `;
     sugeridosValues.push(didUsuario);
   }
@@ -146,7 +192,9 @@ export async function home({ db, req, userId, profile }) {
     values: sugeridosValues,
   });
 
-  const didPedidos = (sugeridos ?? []).map((x) => x?.did_pedido).filter(Boolean);
+  const didPedidos = (sugeridos ?? [])
+    .map((x) => x?.did_pedido)
+    .filter(Boolean);
 
   // Mapa: did_pedido -> productos[]
   const productosPorPedido = new Map();
@@ -292,14 +340,11 @@ export async function home({ db, req, userId, profile }) {
 
   const ot_sugeridas = Array.from(otMap.values());
 
-  // --------------------
-  // RESPONSE
-  // --------------------
   return {
     success: true,
     message: "Home PVs obtenida correctamente",
     data: {
-      total_hoy: String(total),
+      total_hoy: String(total_hoy),
       pendientes_total: String(pendientes_total),
       completados_total: String(completados_total),
       ot_urgentes: "0",
