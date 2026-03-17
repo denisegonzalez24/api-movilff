@@ -3,13 +3,17 @@ import { LightdataORM } from "lightdata-tools";
 export async function desestimarOrdenTrabajo({ db, req }) {
     const { did } = req.params;
     const { userId } = req.user;
-    const { did_usuario } = req.body;
+
+    const { did_usuario, motivo } = req.body;
 
     await LightdataORM.update({
         db,
         table: "ordenes_trabajo",
         where: { did: did },
-        data: { estado: 4 },
+        data: {
+            estado: 4,
+            motivo: motivo
+        },
         quien: userId,
         throwIfNotFound: true
     });

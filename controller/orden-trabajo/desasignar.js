@@ -9,7 +9,7 @@ export async function desasignarOrdenTrabajo({ db, req }) {
         table: "ordenes_trabajo",
         where: { did: did },
         data: { asignado: 0 },
-        quien: userId,
+        quien: userId || 0,
         throwIfNotFound: true
     });
 
