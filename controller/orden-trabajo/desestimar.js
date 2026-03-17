@@ -12,7 +12,7 @@ export async function desestimarOrdenTrabajo({ db, req }) {
         where: { did: did },
         data: {
             estado: 4,
-            motivo: motivo
+            motivo: motivo || null
         },
         quien: userId,
         throwIfNotFound: true
