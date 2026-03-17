@@ -2,7 +2,7 @@ import { LightdataORM } from "lightdata-tools";
 
 export async function desasignarOrdenTrabajo({ db, req }) {
     const { did } = req.params;
-    const { userId } = req.user;
+    const { userId } = req.body;
 
     await LightdataORM.update({
         db,
