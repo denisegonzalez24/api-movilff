@@ -1,16 +1,35 @@
 import { executeQuery, LightdataORM } from "lightdata-tools";
 
-export async function home({ db, req }) {
-  const user = req?.user ?? req?.usuario ?? null;
+export async function home({ db, req, userId, profile }) {
+  const didUsuario = userId;
+  const perfil = profile;
+
+  console.log(userId, profile);
 
   // Estados reales
   const PENDIENTES = [1, 2]; // Pendiente + En curso
-  const COMPLETADOS = [3]; // Terminada (por ahora se cuenta)
+  const COMPLETADOS = [3]; // Terminada
 
-  const baseWhere = `
+  const esPerfilTres = perfil == 3;
+
+  // --------------------
+  // WHERE BASE DINÁMICO
+  // TODOS los count y sum solo del día de hoy
+  // --------------------
+  let baseWhere = `
     WHERE elim = 0
       AND superado = 0
+      AND DATE(fecha_inicio) = CURDATE()
   `;
+
+  const baseValues = [];
+
+  if (esPerfilTres) {
+    baseWhere += `
+      AND asignado = ?
+    `;
+    baseValues.push(didUsuario);
+  }
 
   // --------------------
   // TOTALES
@@ -20,7 +39,7 @@ export async function home({ db, req }) {
       COUNT(*) AS total,
       SUM(CASE WHEN estado IN (${PENDIENTES.map(() => "?").join(",")}) THEN 1 ELSE 0 END) AS pendientes_total,
       SUM(CASE WHEN estado IN (${COMPLETADOS.map(() => "?").join(",")}) THEN 1 ELSE 0 END) AS completados_total,
-      SUM(CASE WHEN DATE(fecha_inicio) = CURDATE() THEN 1 ELSE 0 END) AS pvs_hoy_total
+      COUNT(*) AS pvs_hoy_total
     FROM ordenes_trabajo
     ${baseWhere};
   `;
@@ -35,78 +54,99 @@ export async function home({ db, req }) {
   ] = await executeQuery({
     db,
     query: totalsSql,
-    values: [...PENDIENTES, ...COMPLETADOS],
+    values: [...PENDIENTES, ...COMPLETADOS, ...baseValues],
     log: true,
   });
 
   // --------------------
-  // PENDIENTES POR ASIGNADO
+  // PENDIENTES SIN ASIGNAR
+  // Solo tiene sentido para perfiles != 3
+  // Y también solo de hoy
   // --------------------
-  const sinAsignarSql = `
-  SELECT COUNT(*) AS cantidad
-  FROM ordenes_trabajo
-  ${baseWhere}
-    AND estado IN (${PENDIENTES.map(() => "?").join(",")})
-    AND (asignado IS NULL OR asignado = '' OR asignado = 0);
-`;
+  let cantidad_sin_asignar = 0;
 
-  const [{ cantidad_sin_asignar = 0 } = {}] = await executeQuery({
-    db,
-    query: sinAsignarSql.replace("COUNT(*) AS cantidad", "COUNT(*) AS cantidad_sin_asignar"),
-    values: [...PENDIENTES],
-    log: true,
-  });
+  if (!esPerfilTres) {
+    const sinAsignarSql = `
+      SELECT COUNT(*) AS cantidad_sin_asignar
+      FROM ordenes_trabajo
+      WHERE elim = 0
+        AND superado = 0
+        AND DATE(fecha_inicio) = CURDATE()
+        AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+        AND (asignado IS NULL OR asignado = '' OR asignado = 0);
+    `;
+
+    const [sinAsignarRow = {}] = await executeQuery({
+      db,
+      query: sinAsignarSql,
+      values: [...PENDIENTES],
+      log: true,
+    });
+
+    cantidad_sin_asignar = Number(sinAsignarRow?.cantidad_sin_asignar ?? 0);
+  }
 
   // --------------------
-  // PEDIDOS SUGERIDOS (2 OT más antiguas pendientes)
-  // 1) Traemos las 2 OTs sugeridas + did_pedido + datos del pedido
-  // 2) Traemos TODOS los productos de esos pedidos y los agrupamos
+  // PEDIDOS SUGERIDOS (2 OT más recientes pendientes de hoy)
+  // Si perfil = 3, solo las asignadas al usuario
   // --------------------
+  let sugeridosWhere = `
+    WHERE ot.elim = 0
+      AND ot.superado = 0
+      AND DATE(ot.fecha_inicio) = CURDATE()
+      AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
+  `;
+
+  const sugeridosValues = [...PENDIENTES];
+
+  if (esPerfilTres) {
+    sugeridosWhere += `
+      AND ot.asignado = ?
+    `;
+    sugeridosValues.push(didUsuario);
+  }
+
   const sugeridosSql = `
-  SELECT
-    ot.did AS ot_did,
-    ot.estado,
-    ot.asignado,
-    ot.fecha_inicio,
-    ot.fecha_fin,
-    ot.alertada,
-    u.nombre AS asignado_nombre,
+    SELECT
+      ot.did AS ot_did,
+      ot.estado,
+      ot.asignado,
+      ot.fecha_inicio,
+      ot.fecha_fin,
+      ot.alertada,
+      u.nombre AS asignado_nombre,
 
-    otp.did_pedido,
+      otp.did_pedido,
 
-    p.number,
-    p.flex,
+      p.number,
+      p.flex,
 
-    p.fecha_venta AS fecha_pedido
-  FROM ordenes_trabajo ot
-  LEFT JOIN ordenes_trabajo_pedidos otp
-    ON otp.did_orden_trabajo = ot.did 
-   AND otp.elim = 0
-   AND otp.superado = 0
-  LEFT JOIN usuarios u
-    ON u.did = ot.asignado and u.superado = 0 and u.elim = 0
-  LEFT JOIN pedidos p
-    ON p.did = otp.did_pedido 
-   AND p.elim = 0
-   AND p.superado = 0
-  WHERE ot.elim = 0
-    AND ot.superado = 0
-    
-    AND ot.estado IN (${PENDIENTES.map(() => "?").join(",")})
-  ORDER BY ot.id DESC
-  LIMIT 2
-`;
+      p.fecha_venta AS fecha_pedido
+    FROM ordenes_trabajo ot
+    LEFT JOIN ordenes_trabajo_pedidos otp
+      ON otp.did_orden_trabajo = ot.did
+     AND otp.elim = 0
+     AND otp.superado = 0
+    LEFT JOIN usuarios u
+      ON u.did = ot.asignado
+     AND u.superado = 0
+     AND u.elim = 0
+    LEFT JOIN pedidos p
+      ON p.did = otp.did_pedido
+     AND p.elim = 0
+     AND p.superado = 0
+    ${sugeridosWhere}
+    ORDER BY ot.id DESC
+    LIMIT 2
+  `;
 
   const sugeridos = await executeQuery({
     db,
     query: sugeridosSql,
-    values: [...PENDIENTES],
-
+    values: sugeridosValues,
   });
 
-  const didPedidos = (sugeridos ?? [])
-    .map((x) => x?.did_pedido)
-    .filter(Boolean);
+  const didPedidos = (sugeridos ?? []).map((x) => x?.did_pedido).filter(Boolean);
 
   // Mapa: did_pedido -> productos[]
   const productosPorPedido = new Map();
@@ -122,7 +162,6 @@ export async function home({ db, req }) {
         pp.cantidad,
         pp.did_producto_variante_valor,
         pr.tiene_ie,
-       
         pp.seller_sku,
         pr.posicion
       FROM pedidos_productos pp
@@ -140,11 +179,7 @@ export async function home({ db, req }) {
       db,
       query: productosSql,
       values: didPedidos,
-
     });
-
-    // mapear stock por did_producto_variante_valor
-
 
     for (const r of productosRows ?? []) {
       if (r.tiene_ie == 1) {
@@ -210,7 +245,9 @@ export async function home({ db, req }) {
         posicion: r.posicion ?? "",
         cantidad: String(r.cantidad ?? "0"),
         did_producto_variante_valor: String(r.did_producto_variante_valor ?? ""),
-        foto: r.imagen ?? "https://ff.lightdata.app/assets-app/img/sistema/img-default.png",
+        foto:
+          r.imagen ??
+          "https://ff.lightdata.app/assets-app/img/sistema/img-default.png",
         stock: String(r.stock ?? "0"),
         identificadores_especiales: r.data_ie ?? [],
       });
@@ -233,13 +270,11 @@ export async function home({ db, req }) {
         procesado: "0",
         pedidos: [],
         insumos: [],
-
       });
     }
 
     const ot = otMap.get(otKey);
 
-    // Evitar repetir el mismo pedido si la query trajera duplicados
     const yaExistePedido = ot.pedidos.some(
       (p) => String(p.did_pedido) === pedidoKey
     );
@@ -267,13 +302,9 @@ export async function home({ db, req }) {
       total_hoy: String(total),
       pendientes_total: String(pendientes_total),
       completados_total: String(completados_total),
-
       ot_urgentes: "0",
-
       sin_asignar: String(cantidad_sin_asignar),
       avisos: [],
-
-      // nuevo formato:
       ot_sugeridas,
     },
   };

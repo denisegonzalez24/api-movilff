@@ -9,7 +9,7 @@ const dashboard = Router();
 dashboard.get(
     '/',
     buildHandlerWrapper({
-        controller: async ({ db, req }) => await home({ db, req }),
+        controller: async ({ db, req }) => await home({ db, req, userId: req.user.userId, profile: req.user.profile }),
     })
 );
 
