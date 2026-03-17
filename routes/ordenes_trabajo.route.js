@@ -34,7 +34,7 @@ ordenes.put(
     "/desasignar/:did",
     buildHandlerWrapper({
         requiredParams: ["did"],
-        optional: ["did_usuario"],
+        optional: ["did_usuario", "motivo"],
         controller: ({ db, req }) => desasignarOrdenTrabajo({ db, req }),
     })
 );
