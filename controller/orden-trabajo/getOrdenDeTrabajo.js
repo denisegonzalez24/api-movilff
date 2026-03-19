@@ -376,7 +376,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 asignado: String(s.asignado ?? ""),
                 nombre_asignado: s.asignado_nombre ?? "",
                 fecha: s.fecha_inicio ?? "",
-                procesado: "0",
+                // procesado: "0",
                 pedidos: [],
                 insumos: [],
             });
@@ -392,7 +392,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             ot.pedidos.push({
                 did_pedido: pedidoKey,
                 id_venta: String(s.number ?? ""),
-                tienda: s.flex ?? "",
+                tienda: String(s.flex) ?? "",
                 fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
                 productos: productosPorPedido.get(pedidoKey) ?? [],
             });
