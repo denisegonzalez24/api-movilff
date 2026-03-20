@@ -25,7 +25,7 @@ export async function desestimarOrdenTrabajo({ db, req }) {
         quien: userId,
         data: {
             did_ot: null,
-            armado: 3,
+            armado: 0,
             fecha_armado: new Date(),
             quien_armado: userId,
         },
