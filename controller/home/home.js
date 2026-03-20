@@ -44,6 +44,8 @@ export async function home({ db, req, userId, profile }) {
     FROM ordenes_trabajo
     WHERE elim = 0
       AND superado = 0
+      AND estado NOT IN (4,3)
+
       AND DATE(fecha_inicio) = CURDATE()
   `;
 
