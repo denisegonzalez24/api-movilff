@@ -315,6 +315,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 pp.did_producto_variante_valor,
                 pp.seller_sku,
                 pr.imagen,
+                pr.ean,
                 pr.tiene_ie,
                 pr.posicion
             FROM pedidos_productos pp
@@ -443,7 +444,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             productosPorPedido.get(key).push({
                 did: String(r.did_producto ?? ""),
                 titulo: r.descripcion ?? "",
-                ean: String(r.codigo ?? ""),
+                ean: String(r.ean ?? ""),
                 sku: String(r.seller_sku ?? ""),
                 posicion: r.posicion ?? "",
                 cantidad: String(r.cantidad ?? "0"),

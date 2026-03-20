@@ -230,6 +230,7 @@ export async function home({ db, req, userId, profile }) {
         pp.did_producto,
         pp.codigo,
         pr.imagen,
+        pr.ean,
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
@@ -362,7 +363,7 @@ export async function home({ db, req, userId, profile }) {
       productosPorPedido.get(key).push({
         did: String(r.did_producto ?? ""),
         titulo: r.descripcion ?? "",
-        ean: String(r.codigo ?? ""),
+        ean: String(r.ean ?? ""),
         sku: String(r.seller_sku ?? ""),
         posicion: r.posicion ?? "",
         cantidad: String(r.cantidad ?? "0"),
