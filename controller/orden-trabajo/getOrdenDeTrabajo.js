@@ -174,31 +174,25 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             }
         }
 
-        // Armador -> asignadas a mí y/o no asignadas según query
+        // Armador -> solo asignadas a el
         else if (perfilNum === 3) {
             if (includeNull && values.length) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
                 if (valuesFiltrados.length) {
-                    where.add(
-                        `(
-                            
-                            ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")})
-                        )`,
-                        ...valuesFiltrados
-                    );
+                    where.in("ot.asignado", valuesFiltrados);
                 } else {
-                    where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                    where.add("1 = 0");
                 }
             } else if (includeNull) {
-                where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                where.add("1 = 0");
             } else if (values.length) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
                 if (valuesFiltrados.length) {
                     where.in("ot.asignado", valuesFiltrados);
                 } else {
-                    // si mandó asignados pero ninguno es él, no debe traer nada
+                    // si mando asignados pero ninguno es el, no debe traer nada
                     where.add("1 = 0");
                 }
             }
@@ -206,13 +200,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     } else {
         // SIN filtro asignado
         if (perfilNum === 3) {
-            // perfil 3 ve por defecto:
-            // - asignadas a él
-            // - no asignadas
-            where.add(
-                `(ot.asignado = ? OR ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)`,
-                userId
-            );
+            // perfil 3 ve por defecto solo las asignadas a el
+            where.add("ot.asignado = ?", userId);
         }
     }
 
