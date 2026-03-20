@@ -230,7 +230,7 @@ export async function home({ db, req, userId, profile }) {
         pp.did_producto,
         pp.codigo,
         pr.imagen,
-        pr.ean,
+        pvv.ean,
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
@@ -242,6 +242,10 @@ export async function home({ db, req, userId, profile }) {
         ON pr.did = pp.did_producto
        AND pr.elim = 0
        AND pr.superado = 0
+
+       LEFT JOIN productos_variante_valores pvv
+        ON pvv.did = pp.did_producto_variante_valor
+        and pvv.elim = 0 and pvv.superado = 0
       WHERE pp.elim = 0
         AND pp.superado = 0
         AND pp.did_pedido IN (${didPedidos.map(() => "?").join(",")})
