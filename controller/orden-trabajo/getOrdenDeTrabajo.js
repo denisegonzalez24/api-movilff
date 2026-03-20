@@ -4,6 +4,26 @@ import { SqlWhere, makeSort } from "../../src/query_utils.js";
 export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const q = req.query || {};
     const perfilNum = Number(profile);
+    const mergeInsumos = (target, insumos) => {
+        for (const insumo of insumos ?? []) {
+            const didInsumo = String(insumo?.did_insumo ?? "");
+            if (!didInsumo) continue;
+
+            const existente = target.find((item) => String(item.did_insumo) === didInsumo);
+            if (existente) {
+                existente.cantidad = String(
+                    Number(existente.cantidad ?? 0) + Number(insumo.cantidad ?? 0)
+                );
+                continue;
+            }
+
+            target.push({
+                did_insumo: didInsumo,
+                nombre: insumo?.nombre ?? "",
+                cantidad: String(insumo?.cantidad ?? 0),
+            });
+        }
+    };
 
     const ESTADOS_SIEMPRE_EXCLUIDOS = [4];
 
@@ -282,6 +302,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     );
 
     const productosPorPedido = new Map();
+    const insumosPorPedido = new Map();
 
     if (didPedidos.length > 0) {
         const productosSql = `
@@ -313,6 +334,54 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             values: didPedidos,
             log: true,
         });
+
+        const didProductos = Array.from(
+            new Set(
+                (productosRows ?? [])
+                    .map((row) => row?.did_producto)
+                    .filter(Boolean)
+            )
+        );
+
+        const recetasPorProducto = new Map();
+
+        if (didProductos.length > 0) {
+            const insumosSql = `
+                SELECT
+                    pi.did_producto,
+                    pi.did_insumo,
+                    pi.cantidad,
+                    i.nombre
+                FROM productos_insumos pi
+                LEFT JOIN insumos i
+                    ON i.did = pi.did_insumo
+                   AND i.elim = 0
+                   AND i.superado = 0
+                WHERE pi.elim = 0
+                  AND pi.superado = 0
+                  AND pi.did_producto IN (${didProductos.map(() => "?").join(",")})
+                ORDER BY pi.did_producto, pi.did_insumo
+            `;
+
+            const insumosRows = await executeQuery({
+                db,
+                query: insumosSql,
+                values: didProductos,
+                log: true,
+            });
+
+            for (const row of insumosRows ?? []) {
+                const productoKey = String(row.did_producto ?? "");
+                if (!productoKey) continue;
+                if (!recetasPorProducto.has(productoKey)) recetasPorProducto.set(productoKey, []);
+
+                recetasPorProducto.get(productoKey).push({
+                    did_insumo: String(row.did_insumo ?? ""),
+                    nombre: row.nombre ?? "",
+                    cantidad_base: Number(row.cantidad ?? 0),
+                });
+            }
+        }
 
         for (const r of productosRows ?? []) {
             if (r.tiene_ie == 1) {
@@ -369,6 +438,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
             const key = String(r.did_pedido);
             if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
+            if (!insumosPorPedido.has(key)) insumosPorPedido.set(key, []);
 
             productosPorPedido.get(key).push({
                 did: String(r.did_producto ?? ""),
@@ -382,6 +452,18 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 stock: String(r.stock ?? "0"),
                 identificadores_especiales: r.data_ie ?? [],
             });
+
+            const recetaProducto = recetasPorProducto.get(String(r.did_producto ?? "")) ?? [];
+            const cantidadProducto = Number(r.cantidad ?? 0);
+
+            mergeInsumos(
+                insumosPorPedido.get(key),
+                recetaProducto.map((insumo) => ({
+                    did_insumo: insumo.did_insumo,
+                    nombre: insumo.nombre,
+                    cantidad: cantidadProducto * Number(insumo.cantidad_base ?? 0),
+                }))
+            );
         }
     }
 
@@ -418,6 +500,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
                 productos: productosPorPedido.get(pedidoKey) ?? [],
             });
+            mergeInsumos(ot.insumos, insumosPorPedido.get(pedidoKey) ?? []);
         }
     }
 
