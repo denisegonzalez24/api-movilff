@@ -231,6 +231,7 @@ export async function home({ db, req, userId, profile }) {
         pp.codigo,
         pr.imagen,
         pvv.ean,
+        pvv.valores,
         pp.descripcion,
         pp.cantidad,
         pp.did_producto_variante_valor,
@@ -246,6 +247,8 @@ export async function home({ db, req, userId, profile }) {
        LEFT JOIN productos_variantes_valores pvv
         ON pvv.did = pp.did_producto_variante_valor
         and pvv.elim = 0 and pvv.superado = 0
+
+        
       WHERE pp.elim = 0
         AND pp.superado = 0
         AND pp.did_pedido IN (${didPedidos.map(() => "?").join(",")})
@@ -267,6 +270,18 @@ export async function home({ db, req, userId, profile }) {
     );
 
     const recetasPorProducto = new Map();
+    const didValoresVariante = Array.from(
+      new Set(
+        (productosRows ?? [])
+          .flatMap((row) =>
+            String(row?.valores ?? "")
+              .split(",")
+              .map((value) => value.trim())
+              .filter(Boolean)
+          )
+      )
+    );
+    const nombresValoresMap = new Map();
 
     if (didProductos.length > 0) {
       const insumosSql = `
@@ -304,6 +319,28 @@ export async function home({ db, req, userId, profile }) {
           nombre: row.nombre ?? "",
           cantidad_base: Number(row.cantidad ?? 0),
         });
+      }
+    }
+
+    if (didValoresVariante.length > 0) {
+      const valoresSql = `
+        SELECT
+          did,
+          nombre
+        FROM variantes_categoria_valores
+        WHERE elim = 0
+          AND superado = 0
+          AND did IN (${didValoresVariante.map(() => "?").join(",")})
+      `;
+
+      const valoresRows = await executeQuery({
+        db,
+        query: valoresSql,
+        values: didValoresVariante,
+      });
+
+      for (const row of valoresRows ?? []) {
+        nombresValoresMap.set(String(row.did ?? ""), row.nombre ?? "");
       }
     }
 
@@ -363,10 +400,19 @@ export async function home({ db, req, userId, profile }) {
       const key = String(r.did_pedido);
       if (!productosPorPedido.has(key)) productosPorPedido.set(key, []);
       if (!insumosPorPedido.has(key)) insumosPorPedido.set(key, []);
+      const nombresVariantes = String(r.valores ?? "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((did) => nombresValoresMap.get(String(did)) ?? "")
+        .filter(Boolean);
+      const tituloProducto = [r.descripcion ?? "", ...nombresVariantes]
+        .filter(Boolean)
+        .join(" ");
 
       productosPorPedido.get(key).push({
         did: String(r.did_producto ?? ""),
-        titulo: r.descripcion ?? "",
+        titulo: tituloProducto,
         ean: String(r.ean ?? ""),
         sku: String(r.seller_sku ?? ""),
         posicion: r.posicion ?? "",
