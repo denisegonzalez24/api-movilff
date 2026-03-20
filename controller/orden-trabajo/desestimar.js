@@ -17,7 +17,19 @@ export async function desestimarOrdenTrabajo({ db, req }) {
         quien: userId,
         throwIfNotFound: true
     });
-
+    await LightdataORM.update({
+        db,
+        table: "pedidos",
+        where: { did_ot: did },
+        versionKey: "did_ot",
+        quien: userId,
+        data: {
+            did_ot: null,
+            armado: 3,
+            fecha_armado: new Date(),
+            quien_armado: userId,
+        },
+    });
     return {
         success: true,
         message: "Orden de Trabajo desestimada correctamente",
