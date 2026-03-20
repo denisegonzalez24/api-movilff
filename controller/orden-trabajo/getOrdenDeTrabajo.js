@@ -182,8 +182,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 if (valuesFiltrados.length) {
                     where.add(
                         `(
-                            (ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)
-                            OR
+                            
                             ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")})
                         )`,
                         ...valuesFiltrados
