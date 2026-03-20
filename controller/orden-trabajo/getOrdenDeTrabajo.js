@@ -89,6 +89,10 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 ? `${q.fecha_to.trim()} 23:59:59`
                 : undefined,
         id_venta: typeof q.id_venta === "string" ? q.id_venta.trim() : undefined,
+        producto_id_venta:
+            typeof q.producto_id_venta === "string"
+                ? q.producto_id_venta.trim()
+                : undefined,
     };
 
     const sortMap = {
@@ -202,6 +206,24 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     if (filtros.fecha_to) where.add("ot.fecha_inicio <= ?", filtros.fecha_to);
 
     if (filtros.id_venta) where.likeCI("p.number", filtros.id_venta);
+    if (filtros.producto_id_venta) {
+        const term = `%${String(filtros.producto_id_venta).toLowerCase()}%`;
+        where.add(
+            `(
+                LOWER(p.number) LIKE ?
+                OR EXISTS (
+                    SELECT 1
+                    FROM pedidos_productos ppf
+                    WHERE ppf.did_pedido = p.did
+                      AND ppf.elim = 0
+                      AND ppf.superado = 0
+                      AND LOWER(ppf.descripcion) LIKE ?
+                )
+            )`,
+            term,
+            term
+        );
+    }
 
     const { whereSql, params } = where.finalize();
 
