@@ -82,14 +82,7 @@ export async function home({ db, req, userId, profile }) {
   const pendientesValues = [...PENDIENTES];
 
   if (esPerfilTres) {
-    pendientesSql += `
-      AND (
-        asignado = ?
-        OR asignado IS NULL
-        OR asignado = ''
-        OR asignado = 0
-      )
-    `;
+    pendientesSql += ` AND asignado = ?`;
     pendientesValues.push(didUsuario);
   }
 
@@ -134,24 +127,7 @@ export async function home({ db, req, userId, profile }) {
   // --------------------
   // PENDIENTES SIN ASIGNAR
   // --------------------
-  const sinAsignarSql = `
-    SELECT COUNT(*) AS cantidad_sin_asignar
-    FROM ordenes_trabajo
-    WHERE elim = 0
-      AND superado = 0
-      AND DATE(fecha_inicio) = CURDATE()
-      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
-      AND (asignado IS NULL OR asignado = '' OR asignado = 0);
-  `;
-
-  const [sinAsignarRow = {}] = await executeQuery({
-    db,
-    query: sinAsignarSql,
-    values: [...PENDIENTES],
-    log: true,
-  });
-
-  const cantidad_sin_asignar = Number(sinAsignarRow?.cantidad_sin_asignar ?? 0);
+  const cantidad_sin_asignar = 0;
 
   // --------------------
   // PEDIDOS SUGERIDOS
@@ -167,14 +143,7 @@ export async function home({ db, req, userId, profile }) {
   const sugeridosValues = [...PENDIENTES];
 
   if (esPerfilTres) {
-    sugeridosWhere += `
-      AND (
-        ot.asignado = ?
-        OR ot.asignado IS NULL
-        OR ot.asignado = ''
-        OR ot.asignado = 0
-      )
-    `;
+    sugeridosWhere += ` AND ot.asignado = ?`;
     sugeridosValues.push(didUsuario);
   }
 
