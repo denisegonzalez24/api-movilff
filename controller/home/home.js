@@ -243,7 +243,7 @@ export async function home({ db, req, userId, profile }) {
        AND pr.elim = 0
        AND pr.superado = 0
 
-       LEFT JOIN productos_variante_valores pvv
+       LEFT JOIN productos_variantes_valores pvv
         ON pvv.did = pp.did_producto_variante_valor
         and pvv.elim = 0 and pvv.superado = 0
       WHERE pp.elim = 0
