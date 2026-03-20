@@ -45,7 +45,7 @@ export async function home({ db, req, userId, profile }) {
     WHERE elim = 0
       AND superado = 0
       AND estado NOT IN (4,3)
-      AND asignado > 0
+      AND asignado is not null
 
       AND DATE(fecha_inicio) = CURDATE()
   `;
