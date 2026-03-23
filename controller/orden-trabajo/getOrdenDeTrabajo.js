@@ -51,11 +51,15 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         if (typeof v !== "string" || !v.trim()) return undefined;
 
         let includeNull = false;
+        let includeAssigned = false;
         const nums = [];
 
         for (const raw of v.split(",")) {
             const s = raw.trim();
-            if (!s) continue;
+            if (!s) {
+                includeAssigned = true;
+                continue;
+            }
 
             if (s === "sin_asignar") {
                 includeNull = true;
@@ -67,6 +71,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
 
         return {
+            includeAssigned,
             includeNull,
             values: nums.length ? Array.from(new Set(nums)) : [],
         };
@@ -162,11 +167,15 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const condicionConAsignado = "(ot.asignado IS NOT NULL AND ot.asignado <> '' AND ot.asignado <> 0)";
 
     if (filtros.asignado) {
-        const { includeNull, values } = filtros.asignado;
+        const { includeAssigned, includeNull, values } = filtros.asignado;
 
         // Admin / Coordinador -> ven todo según filtro
         if (perfilNum === 1 || perfilNum === 2) {
-            if (includeNull && values.length) {
+            if (includeAssigned && includeNull) {
+                where.add(`(${condicionConAsignado} OR ${condicionSinAsignar})`);
+            } else if (includeAssigned) {
+                where.add(condicionConAsignado);
+            } else if (includeNull && values.length) {
                 where.add(
                     `(${condicionSinAsignar} OR ot.asignado IN (${values.map(() => "?").join(",")}))`,
                     ...values
@@ -180,7 +189,11 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
         // Armador -> solo asignadas a el
         else if (perfilNum === 3) {
-            if (includeNull && values.length) {
+            if (includeAssigned && includeNull) {
+                where.add(`(ot.asignado = ? OR ${condicionSinAsignar})`, userId);
+            } else if (includeAssigned) {
+                where.add("ot.asignado = ?", userId);
+            } else if (includeNull && values.length) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
                 if (valuesFiltrados.length) {
