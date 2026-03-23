@@ -4,6 +4,7 @@ import { SqlWhere, makeSort } from "../../src/query_utils.js";
 export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const q = req.query || {};
     const perfilNum = Number(profile);
+    const hasAsignadoQuery = Object.prototype.hasOwnProperty.call(q, "asignado");
     const mergeInsumos = (target, insumos) => {
         for (const insumo of insumos ?? []) {
             const didInsumo = String(insumo?.did_insumo ?? "");
@@ -157,6 +158,9 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     if (filtros.did_cliente?.length) where.in("p.did_cliente", filtros.did_cliente);
     if (filtros.estado?.length) where.in("ot.estado", filtros.estado);
 
+    const condicionSinAsignar = "(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)";
+    const condicionConAsignado = "(ot.asignado IS NOT NULL AND ot.asignado <> '' AND ot.asignado <> 0)";
+
     if (filtros.asignado) {
         const { includeNull, values } = filtros.asignado;
 
@@ -164,11 +168,11 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         if (perfilNum === 1 || perfilNum === 2) {
             if (includeNull && values.length) {
                 where.add(
-                    `(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0 OR ot.asignado IN (${values.map(() => "?").join(",")}))`,
+                    `(${condicionSinAsignar} OR ot.asignado IN (${values.map(() => "?").join(",")}))`,
                     ...values
                 );
             } else if (includeNull) {
-                where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                where.add(condicionSinAsignar);
             } else if (values.length) {
                 where.in("ot.asignado", values);
             }
@@ -181,14 +185,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
                 if (valuesFiltrados.length) {
                     where.add(
-                        `(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0 OR ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")}))`,
+                        `(${condicionSinAsignar} OR ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")}))`,
                         ...valuesFiltrados
                     );
                 } else {
-                    where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                    where.add(condicionSinAsignar);
                 }
             } else if (includeNull) {
-                where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
+                where.add(condicionSinAsignar);
             } else if (values.length) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
@@ -200,12 +204,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 }
             }
         }
-    } else {
-        // SIN filtro asignado
-        if (perfilNum === 3) {
-            // perfil 3 ve por defecto las asignadas a el y las sin asignar
-            where.add("(ot.asignado = ? OR ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)", userId);
+    } else if (hasAsignadoQuery) {
+        if (perfilNum === 1 || perfilNum === 2) {
+            where.add(condicionConAsignado);
+        } else if (perfilNum === 3) {
+            where.add("ot.asignado = ?", userId);
         }
+    } else if (perfilNum === 3) {
+        where.add("ot.asignado = ?", userId);
     }
 
     if (filtros.tienda?.length) where.in("p.flex", filtros.tienda);
