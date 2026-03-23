@@ -82,6 +82,9 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         sort_by: q.sort_by ?? q.sortBy,
         sort_dir: q.sort_dir ?? q.sortDir,
     };
+    const normalizedSortBy = String(qp.sort_by ?? "fecha").trim();
+    const normalizedSortDir =
+        String(qp.sort_dir ?? "asc").trim().toLowerCase() === "desc" ? "desc" : "asc";
 
     const estadosQuery = parseCsvNums(q.estado);
 
@@ -268,6 +271,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
             u.nombre AS asignado_nombre,
             otp.did_pedido,
             p.did AS pedido_did,
+            p.did_cliente,
             p.number,
             p.flex,
             p.fecha_venta AS fecha_pedido
@@ -555,6 +559,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         if (!yaExistePedido && pedidoKey) {
             ot.pedidos.push({
                 did_pedido: pedidoKey,
+                did_cliente: String(s.did_cliente ?? ""),
                 id_venta: String(s.number ?? ""),
                 tienda: String(s.flex) ?? "",
                 fecha: s.fecha_pedido ?? s.fecha_inicio ?? "",
@@ -574,6 +579,42 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         }
 
         return true;
+    });
+
+    const getSortValue = (ot) => {
+        const primerPedido = ot?.pedidos?.[0] ?? {};
+
+        switch (normalizedSortBy) {
+            case "did_cliente":
+                return String(primerPedido?.did_cliente ?? "");
+            case "id_venta":
+                return String(primerPedido?.id_venta ?? "");
+            case "estado":
+                return Number(ot?.estado ?? 0);
+            case "tienda":
+                return String(primerPedido?.tienda ?? "");
+            case "asignado":
+                return String(ot?.asignado ?? "");
+            case "fecha":
+            default:
+                return new Date(ot?.fecha ?? 0).getTime();
+        }
+    };
+
+    data.sort((a, b) => {
+        const aValue = getSortValue(a);
+        const bValue = getSortValue(b);
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+            return normalizedSortDir === "desc" ? bValue - aValue : aValue - bValue;
+        }
+
+        const compare = String(aValue).localeCompare(String(bValue), "es", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return normalizedSortDir === "desc" ? compare * -1 : compare;
     });
 
     return {
