@@ -180,12 +180,15 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
                 if (valuesFiltrados.length) {
-                    where.in("ot.asignado", valuesFiltrados);
+                    where.add(
+                        `(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0 OR ot.asignado IN (${valuesFiltrados.map(() => "?").join(",")}))`,
+                        ...valuesFiltrados
+                    );
                 } else {
-                    where.add("1 = 0");
+                    where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
                 }
             } else if (includeNull) {
-                where.add("1 = 0");
+                where.add("(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)");
             } else if (values.length) {
                 const valuesFiltrados = values.filter((v) => Number(v) === Number(userId));
 
@@ -200,8 +203,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     } else {
         // SIN filtro asignado
         if (perfilNum === 3) {
-            // perfil 3 ve por defecto solo las asignadas a el
-            where.add("ot.asignado = ?", userId);
+            // perfil 3 ve por defecto las asignadas a el y las sin asignar
+            where.add("(ot.asignado = ? OR ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)", userId);
         }
     }
 
