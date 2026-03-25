@@ -233,7 +233,7 @@ export async function home({ db, req, userId, profile }) {
      AND p.elim = 0
      AND p.superado = 0
     ${sugeridosWhere}
-    ORDER BY ot.id DESC
+    ORDER BY ot.id asc
     LIMIT 2
   `;
 
