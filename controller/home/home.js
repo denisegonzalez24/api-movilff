@@ -139,6 +139,7 @@ export async function home({ db, req, userId, profile }) {
     WHERE elim = 0
       AND superado = 0
       AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+      AND DATE(fecha_inicio) = CURDATE()
       AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)
   `;
 
@@ -169,7 +170,6 @@ export async function home({ db, req, userId, profile }) {
       AND estado IN (${PENDIENTES.map(() => "?").join(",")})
       AND ${condicionSinAsignar}
       AND DATE(fecha_inicio) = CURDATE()
-      AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)
   `;
 
   const sinAsignarValues = [...PENDIENTES];
