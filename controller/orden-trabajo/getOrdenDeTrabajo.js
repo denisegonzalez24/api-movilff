@@ -141,7 +141,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     const sortMap = {
         did_cliente: "p.did_cliente",
-        fecha: "ot.fecha_inicio",
+        fecha: fechaFiltroColumna,
         id_venta: "p.number",
         estado: "ot.estado",
         tienda: "p.flex",
@@ -621,7 +621,13 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
                 return String(ot?.asignado ?? "");
             case "fecha":
             default:
-                return new Date(ot?.fecha ?? 0).getTime();
+                return new Date(
+                    tipoFecha === 2
+                        ? ot?.fecha_ultimo_movimiento
+                        : tipoFecha === 3
+                            ? ot?.fecha_asignado
+                            : ot?.fecha
+                ).getTime();
         }
     };
 
