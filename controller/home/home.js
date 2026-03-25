@@ -168,6 +168,8 @@ export async function home({ db, req, userId, profile }) {
       AND superado = 0
       AND estado IN (${PENDIENTES.map(() => "?").join(",")})
       AND ${condicionSinAsignar}
+      AND DATE(fecha_inicio) = CURDATE()
+      AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)
   `;
 
   const sinAsignarValues = [...PENDIENTES];
@@ -205,6 +207,8 @@ export async function home({ db, req, userId, profile }) {
       ot.estado,
       ot.asignado,
       ot.fecha_inicio,
+      ot.fecha_ultimo_movimiento,
+      ot.fecha_asignado,
       ot.fecha_fin,
       ot.alertada,
       u.nombre AS asignado_nombre,
@@ -476,6 +480,8 @@ export async function home({ db, req, userId, profile }) {
         estado: String(s.estado ?? ""),
         nombre_asignado: s.asignado_nombre ?? "",
         fecha: s.fecha_inicio ?? "",
+        fecha_ultimo_movimiento: s.fecha_ultimo_movimiento ?? "",
+        fecha_asignado: s.fecha_asignado ?? "",
         //  procesado: "0",
         pedidos: [],
         insumos: [],
