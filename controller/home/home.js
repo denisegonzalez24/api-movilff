@@ -3,6 +3,10 @@ import { executeQuery, LightdataORM } from "lightdata-tools";
 export async function home({ db, req, userId, profile }) {
   const didUsuario = userId;
   const perfil = profile;
+  const condicionSinAsignar =
+    "(asignado IS NULL OR asignado = '' OR asignado = 0)";
+  const condicionConAsignado =
+    "(asignado IS NOT NULL AND asignado <> '' AND asignado <> 0)";
   const mergeInsumos = (target, insumos) => {
     for (const insumo of insumos ?? []) {
       const didInsumo = String(insumo?.did_insumo ?? "");
@@ -45,7 +49,7 @@ export async function home({ db, req, userId, profile }) {
     WHERE elim = 0
       AND superado = 0
       AND estado NOT IN (4,3)
-      AND asignado is not null
+      AND ${condicionConAsignado}
 
       AND DATE(fecha_inicio) = CURDATE()
   `;
@@ -125,9 +129,57 @@ export async function home({ db, req, userId, profile }) {
   const completados_total = Number(completadosRow?.completados_total ?? 0);
 
   // --------------------
+  // URGENTES TOTAL
+  // OT con mas de 6 horas desde fecha_inicio
+  // perfil 3 => solo las mias
+  // --------------------
+  let urgentesSql = `
+    SELECT COUNT(*) AS urgentes_total
+    FROM ordenes_trabajo
+    WHERE elim = 0
+      AND superado = 0
+      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+      AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)
+  `;
+
+  const urgentesValues = [...PENDIENTES];
+
+  if (esPerfilTres) {
+    urgentesSql += ` AND asignado = ?`;
+    urgentesValues.push(didUsuario);
+  }
+
+  const [urgentesRow = {}] = await executeQuery({
+    db,
+    query: urgentesSql,
+    values: urgentesValues,
+    log: true,
+  });
+
+  const ot_urgentes = Number(urgentesRow?.urgentes_total ?? 0);
+
+  // --------------------
   // PENDIENTES SIN ASIGNAR
   // --------------------
-  const cantidad_sin_asignar = 0;
+  let sinAsignarSql = `
+    SELECT COUNT(*) AS sin_asignar_total
+    FROM ordenes_trabajo
+    WHERE elim = 0
+      AND superado = 0
+      AND estado IN (${PENDIENTES.map(() => "?").join(",")})
+      AND ${condicionSinAsignar}
+  `;
+
+  const sinAsignarValues = [...PENDIENTES];
+
+  const [sinAsignarRow = {}] = await executeQuery({
+    db,
+    query: sinAsignarSql,
+    values: sinAsignarValues,
+    log: true,
+  });
+
+  const cantidad_sin_asignar = Number(sinAsignarRow?.sin_asignar_total ?? 0);
 
   // --------------------
   // PEDIDOS SUGERIDOS
@@ -457,7 +509,7 @@ export async function home({ db, req, userId, profile }) {
       total_hoy: String(total_hoy),
       pendientes_total: String(pendientes_total),
       completados_total: String(completados_total),
-      ot_urgentes: "0",
+      ot_urgentes: String(ot_urgentes),
       sin_asignar: String(cantidad_sin_asignar),
       avisos: [],
       ot_sugeridas,
