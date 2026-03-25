@@ -4,12 +4,16 @@ export async function asignarOrdenTrabajo({ db, req }) {
     const { did } = req.params;
     const { userId } = req.user;
     const { did_usuario } = req.body;
+    const now = new Date();
 
     await LightdataORM.update({
         db,
         table: "ordenes_trabajo",
         where: { did: did },
-        data: { asignado: did_usuario },
+        data: {
+            asignado: did_usuario,
+            fecha_asignado: now,
+        },
         quien: userId,
         throwIfNotFound: true
     });

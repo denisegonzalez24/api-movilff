@@ -87,6 +87,14 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         String(qp.sort_dir ?? "asc").trim().toLowerCase() === "desc" ? "desc" : "asc";
 
     const estadosQuery = parseCsvNums(q.estado);
+    const tipoFechaRaw = q.tipoFecha ?? q.tipo_fecha;
+    const tipoFecha = Number(tipoFechaRaw);
+    const fechaFiltroColumna =
+        tipoFecha === 2
+            ? "ot.fecha_ultimo_movimiento"
+            : tipoFecha === 3
+                ? "ot.fecha_asignado"
+                : "ot.fecha_inicio";
 
     // Si mandan estado por query:
     // - se permite 3
@@ -235,8 +243,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     if (filtros.alertada === 1) where.eq("ot.alertada", 1);
     else if (filtros.alertada === 0) where.eq("ot.alertada", 0);
 
-    if (filtros.fecha_from) where.add("ot.fecha_inicio >= ?", filtros.fecha_from);
-    if (filtros.fecha_to) where.add("ot.fecha_inicio <= ?", filtros.fecha_to);
+    if (filtros.fecha_from) where.add(`${fechaFiltroColumna} >= ?`, filtros.fecha_from);
+    if (filtros.fecha_to) where.add(`${fechaFiltroColumna} <= ?`, filtros.fecha_to);
 
     if (filtros.id_venta) where.likeCI("p.number", filtros.id_venta);
     if (filtros.producto_id_venta) {

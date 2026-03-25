@@ -3,6 +3,7 @@ import { LightdataORM } from "lightdata-tools";
 export async function desestimarOrdenTrabajo({ db, req }) {
     const { did } = req.params;
     const { userId } = req.user;
+    const now = new Date();
 
     const { did_usuario, motivo } = req.body;
 
@@ -12,7 +13,8 @@ export async function desestimarOrdenTrabajo({ db, req }) {
         where: { did: did },
         data: {
             estado: 4,
-            motivo: motivo || null
+            motivo: motivo || null,
+            fecha_ultimo_movimiento: now,
         },
         quien: userId,
         throwIfNotFound: true
@@ -26,7 +28,7 @@ export async function desestimarOrdenTrabajo({ db, req }) {
         data: {
             did_ot: null,
             armado: 0,
-            fecha_armado: new Date(),
+            fecha_armado: now,
             quien_armado: userId,
         },
     });

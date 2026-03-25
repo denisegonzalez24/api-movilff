@@ -6,13 +6,17 @@ export async function armar({ db, req }) {
     const { userId } = req.user;
     const { did } = req.params;
     const { productos } = req.body ?? {};
+    const now = new Date();
 
     await LightdataORM.update({
         db,
         table: "ordenes_trabajo",
         where: { did },
         quien: userId,
-        data: { estado: 3 },
+        data: {
+            estado: 3,
+            fecha_ultimo_movimiento: now,
+        },
     });
 
     await LightdataORM.update({
@@ -24,7 +28,7 @@ export async function armar({ db, req }) {
         data: {
             armado: 2,
             quien_armado: userId,
-            fecha_armado: new Date(),
+            fecha_armado: now,
         },
     });
     const queryDidCliente = await LightdataORM.select({
@@ -42,7 +46,7 @@ export async function armar({ db, req }) {
         did_ot: did,
         quien: userId,
         modo: "ARMADO",
-        fecha: new Date(),
+        fecha: now,
         observacion: `Egreso por armado movil`,
         id_venta: queryDidCliente[0]?.number,
     });
