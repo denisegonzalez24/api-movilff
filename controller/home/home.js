@@ -197,7 +197,7 @@ export async function home({ db, req, userId, profile }) {
   const sugeridosValues = [...PENDIENTES];
 
   if (esPerfilTres) {
-    sugeridosWhere += ` AND ot.asignado = ?`;
+    sugeridosWhere += ` AND (ot.asignado = ? OR ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)`;
     sugeridosValues.push(didUsuario);
   }
 
