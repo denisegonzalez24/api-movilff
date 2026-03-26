@@ -249,7 +249,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     if (filtros.urgente === 1) {
         where.add("DATE(ot.fecha_inicio) = CURDATE()");
-        where.add("ot.fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)");
+        where.add("ot.fecha_inicio <= DATE_SUB(NOW(), INTERVAL 30 minute)");
     }
 
     if (filtros.alertada === 1) where.eq("ot.alertada", 1);
