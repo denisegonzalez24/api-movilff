@@ -110,7 +110,11 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         estado: estadosPermitidos,
         asignado: parseAsignado(q.asignado),
         tienda: parseCsvNums(q.tienda),
-        urgente: parseCsvNums(q.urgente),
+        urgente: (() => {
+            const v = q.urgente;
+            if (v === undefined || v === null || v === "") return undefined;
+            return Number(v) === 1 ? 1 : 0;
+        })(),
         alertada: (() => {
             const v = q.alertada;
             if (v === undefined || v === null || v === "") return undefined;
@@ -241,30 +245,9 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     if (filtros.tienda?.length) where.in("p.flex", filtros.tienda);
 
-    if (filtros.urgente?.length) {
-        const urgenciaCondiciones = [];
-
-        if (filtros.urgente.includes(1)) {
-            urgenciaCondiciones.push(
-                "(DATE(ot.fecha_inicio) = CURDATE() AND ot.fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR))"
-            );
-        }
-
-        if (filtros.urgente.includes(0)) {
-            urgenciaCondiciones.push(
-                "(DATE(ot.fecha_inicio) = CURDATE() AND ot.fecha_inicio > DATE_SUB(NOW(), INTERVAL 6 HOUR) AND ot.fecha_inicio <= DATE_SUB(NOW(), INTERVAL 1 HOUR))"
-            );
-        }
-
-        if (filtros.urgente.includes(-1)) {
-            urgenciaCondiciones.push(
-                "(DATE(ot.fecha_inicio) = CURDATE() AND ot.fecha_inicio > DATE_SUB(NOW(), INTERVAL 1 HOUR))"
-            );
-        }
-
-        if (urgenciaCondiciones.length) {
-            where.add(`(${urgenciaCondiciones.join(" OR ")})`);
-        }
+    if (filtros.urgente === 1) {
+        where.add("DATE(ot.fecha_inicio) = CURDATE()");
+        where.add("ot.fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)");
     }
 
     if (filtros.alertada === 1) where.eq("ot.alertada", 1);
