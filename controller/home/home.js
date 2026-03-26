@@ -140,7 +140,7 @@ export async function home({ db, req, userId, profile }) {
       AND superado = 0
       AND estado IN (${PENDIENTES.map(() => "?").join(",")})
       AND DATE(fecha_inicio) = CURDATE()
-      AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 30 minute)
+      AND fecha_inicio <= DATE_SUB(NOW(), INTERVAL 6 HOUR)
   `;
 
   const urgentesValues = [...PENDIENTES];
