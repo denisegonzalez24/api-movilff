@@ -108,7 +108,7 @@ export async function home({ db, req, userId, profile }) {
     FROM ordenes_trabajo
     WHERE elim = 0
       AND superado = 0
-      AND DATE(fecha_inicio) = CURDATE()
+      AND DATE(fecha_ultimo_movimiento) = CURDATE()
       AND estado IN (${COMPLETADOS.map(() => "?").join(",")})
   `;
 
