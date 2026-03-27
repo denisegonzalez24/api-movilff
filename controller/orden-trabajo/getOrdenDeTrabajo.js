@@ -104,6 +104,10 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const estadosPermitidos = Array.isArray(estadosQuery)
         ? estadosQuery.filter((x) => Number(x) !== 4)
         : undefined;
+    const soloCompletados =
+        Array.isArray(estadosPermitidos) &&
+        estadosPermitidos.length === 1 &&
+        Number(estadosPermitidos[0]) === 3;
 
     const filtros = {
         did_cliente: parseCsvNums(q.did_cliente),
@@ -174,12 +178,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         .add("ot.elim = 0")
         .add("ot.superado = 0")
         .add("ot.estado IS NOT NULL")
-        .add("ot.estado <> 4")
-        .add("otp.elim = 0")
-        .add("otp.superado = 0")
-        .add("p.elim = 0")
-        .add("p.superado = 0")
-        .add("p.did_cliente IS NOT NULL");
+        .add("ot.estado <> 4");
 
     // Si NO mandan estado en query, excluir también el 3 por default
     if (!Array.isArray(estadosQuery) || !estadosQuery.length) {
@@ -188,6 +187,7 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
 
     if (filtros.did_cliente?.length) where.in("p.did_cliente", filtros.did_cliente);
     if (filtros.estado?.length) where.in("ot.estado", filtros.estado);
+    if (!soloCompletados) where.add("p.did_cliente IS NOT NULL");
 
     const condicionSinAsignar = "(ot.asignado IS NULL OR ot.asignado = '' OR ot.asignado = 0)";
     const condicionConAsignado = "(ot.asignado IS NOT NULL AND ot.asignado <> '' AND ot.asignado <> 0)";
@@ -319,12 +319,16 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         FROM ordenes_trabajo ot
         LEFT JOIN ordenes_trabajo_pedidos otp
             ON otp.did_orden_trabajo = ot.did
+           AND otp.elim = 0
+           AND otp.superado = 0
         LEFT JOIN usuarios u
             ON u.did = ot.asignado
            AND u.superado = 0
            AND u.elim = 0
         LEFT JOIN pedidos p
             ON p.did = otp.did_pedido
+           AND p.elim = 0
+           AND p.superado = 0
         ${whereSql}
         ${orderSql}, ot.did ASC, p.did ASC
     `;
