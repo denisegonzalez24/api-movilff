@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { preloader } from "../controller/preload/preloader.js";
+import { getArmadores, preloader } from "../controller/preload/preloader.js";
 import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
 
 
@@ -9,6 +9,13 @@ preload.get(
     '/',
     buildHandlerWrapper({
         controller: async ({ db, req }) => await preloader({ db, req }),
+    })
+);
+
+preload.get(
+    '/armadores',
+    buildHandlerWrapper({
+        controller: async ({ db }) => await getArmadores({ db }),
     })
 );
 

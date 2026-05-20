@@ -8,6 +8,7 @@ import { initRedis } from "./db.js";
 import preload from "./routes/preload.route.js";
 import ordenes from "./routes/ordenes_trabajo.route.js";
 import dashboard from "./routes/home.route.js";
+import fcm from "./routes/fcm.route.js";
 import { collectSatMetrics } from "./src/satMetrics.js";
 
 const app = express();
@@ -47,6 +48,7 @@ app.use(verifyToken({ jwtSecret, jwtIssuer, jwtAudience }));
 app.use("/api/preload", preload);
 app.use("/api/ordenes-trabajo", ordenes);
 app.use("/api/home", dashboard);
+app.use("/api/fcm", fcm);
 
 const start = async () => {
   try {

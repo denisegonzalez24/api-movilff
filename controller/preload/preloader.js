@@ -55,3 +55,39 @@ export async function preloader({ db, req }) {
     meta: { timestamp: new Date().toISOString() },
   };
 }
+
+export async function getArmadores({ db }) {
+  const armadores = await executeQuery({
+    db,
+    query: `
+      SELECT
+        did,
+        nombre,
+        apellido,
+        usuario,
+        telefono,
+        email
+      FROM usuarios
+      WHERE perfil = 3
+        AND superado = 0
+        AND elim = 0
+      ORDER BY nombre ASC, apellido ASC
+    `,
+  });
+
+  return {
+    success: true,
+    message: "Armadores obtenidos correctamente",
+    data: {
+      armadores: (armadores ?? []).map((a) => ({
+        did: String(a.did ?? ""),
+        nombre: a.nombre ?? "",
+        apellido: a.apellido ?? "",
+        usuario: a.usuario ?? "",
+        telefono: a.telefono ?? "",
+        email: a.email ?? "",
+      })),
+    },
+    meta: { timestamp: new Date().toISOString() },
+  };
+}
