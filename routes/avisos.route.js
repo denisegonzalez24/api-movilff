@@ -13,6 +13,13 @@ avisos.get(
 );
 
 avisos.put(
+    "/leido",
+    buildHandlerWrapper({
+        controller: ({ db, req }) => marcarAvisoLeido({ db, req }),
+    })
+);
+
+avisos.put(
     "/:did/leido",
     buildHandlerWrapper({
         controller: ({ db, req }) => marcarAvisoLeido({ db, req }),

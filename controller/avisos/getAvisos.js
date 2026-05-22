@@ -13,7 +13,7 @@ export async function getAvisos({ db, req }) {
 
     const limitRaw = Number(q.limit ?? 20);
     const limit = Number.isFinite(limitRaw)
-        ? Math.max(1, Math.min(Math.trunc(limitRaw), 20))
+        ? Math.max(1, Math.min(Math.trunc(limitRaw), 30))
         : 20;
 
     const values = [userId];

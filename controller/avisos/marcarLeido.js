@@ -1,45 +1,69 @@
 import { CustomException, executeQuery, LightdataORM, Status } from "lightdata-tools";
 
 export async function marcarAvisoLeido({ db, req }) {
-    const { did } = req.params;
     const { userId } = req.user;
+    const body = req.body || {};
+    const didsInput = Array.isArray(body)
+        ? body
+        : Array.isArray(body.dids)
+            ? body.dids
+            : Array.isArray(body.did)
+                ? body.did
+                : req.params.did
+                    ? [req.params.did]
+                    : [];
 
-    if (!String(did || "").trim()) {
+    const dids = Array.from(
+        new Set(
+            didsInput
+                .map((did) => String(did ?? "").trim())
+                .filter(Boolean)
+        )
+    );
+
+    if (!dids.length) {
         throw new CustomException({
-            title: "Aviso requerido",
-            message: "Debe enviar el did del aviso",
+            title: "Avisos requeridos",
+            message: "Debe enviar al menos un did de aviso",
             status: Status.badRequest,
         });
     }
 
-    const [aviso] = await executeQuery({
+    const avisos = await executeQuery({
         db,
         query: `
             SELECT did, leido
             FROM avisos
-            WHERE did = ?
+            WHERE did IN (${dids.map(() => "?").join(",")})
               AND user_id = ?
               AND superado = 0
               AND elim = 0
-            LIMIT 1
         `,
-        values: [did, userId],
+        values: [...dids, userId],
         log: true,
     });
 
-    if (!aviso) {
+    const didsEncontrados = new Set((avisos ?? []).map((aviso) => String(aviso.did ?? "")));
+    const didsFaltantes = dids.filter((did) => !didsEncontrados.has(String(did)));
+
+    if (didsFaltantes.length) {
         throw new CustomException({
-            title: "Aviso no encontrado",
-            message: "No se encontro el aviso para el usuario autenticado",
+            title: "Avisos no encontrados",
+            message: "Uno o mas avisos no existen o no pertenecen al usuario autenticado",
             status: Status.notFound,
         });
     }
 
-    if (Number(aviso.leido) !== 1) {
+    const didsParaActualizar = (avisos ?? [])
+        .filter((aviso) => Number(aviso.leido) !== 1)
+        .map((aviso) => String(aviso.did ?? ""))
+        .filter(Boolean);
+
+    if (didsParaActualizar.length) {
         await LightdataORM.update({
             db,
             table: "avisos",
-            where: { did },
+            where: { did: didsParaActualizar },
             data: { leido: 1 },
             quien: userId,
             throwIfNotFound: true,
@@ -48,8 +72,11 @@ export async function marcarAvisoLeido({ db, req }) {
 
     return {
         success: true,
-        message: "Aviso marcado como leido correctamente",
-        data: {},
+        message: "Avisos marcados como leidos correctamente",
+        data: {
+            dids,
+            actualizados: didsParaActualizar.length,
+        },
         meta: { timestamp: new Date().toISOString() },
     };
 }
