@@ -9,6 +9,7 @@ import preload from "./routes/preload.route.js";
 import ordenes from "./routes/ordenes_trabajo.route.js";
 import dashboard from "./routes/home.route.js";
 import fcm from "./routes/fcm.route.js";
+import avisos from "./routes/avisos.route.js";
 import { collectSatMetrics } from "./src/satMetrics.js";
 
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api/preload", preload);
 app.use("/api/ordenes-trabajo", ordenes);
 app.use("/api/home", dashboard);
 app.use("/api/fcm", fcm);
+app.use("/api/avisos", avisos);
 
 const start = async () => {
   try {
