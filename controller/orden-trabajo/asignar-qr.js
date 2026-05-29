@@ -9,6 +9,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
 
 
     const now = new Date();
+    console.log("dataQr", dataQr);
     if (dataQr.didEmpresa !== companyId) {
         throw new CustomException({
             status: 400,
