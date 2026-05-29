@@ -8,10 +8,8 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const { did_usuario, dataQr } = req.body;
 
     const now = new Date();
-    console.log("dataQr", dataQr);
-    console.log("companyId", companyId);
-    const didEmpresaQr = Number(dataQr.didEmpresa);
-    console.log("didEmpresaQr", didEmpresaQr);
+    const didEmpresaQr = Number(dataQr.didempresa);
+
     if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
@@ -21,7 +19,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     }
 
     // asocio el qr a un didPedido
-    const didPedido = Number(dataQr.didPedido);
+    const didPedido = Number(dataQr.didpedido);
 
     //? chequear si truena cuando el pedido no existe, o si el pedido ya tiene una orden de trabajo asociada
     let didOt = await LightdataORM.select({

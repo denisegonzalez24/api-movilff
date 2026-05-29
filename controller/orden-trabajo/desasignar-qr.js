@@ -3,10 +3,10 @@ import { LightdataORM } from "lightdata-tools";
 export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     const { userId, companyId } = req.user;
     const { motivo, dataQr } = req.body;
-    const didPedido = Number(dataQr.didPedido);
+    const didPedido = Number(dataQr.didpedido);
     const now = new Date();
 
-    const didEmpresaQr = Number(dataQr.didEmpresa);
+    const didEmpresaQr = Number(dataQr.didempresa);
     if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
