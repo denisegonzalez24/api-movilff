@@ -3,7 +3,7 @@ import { CustomException, LightdataORM } from "lightdata-tools";
 
 
 export async function asignarOrdenTrabajoQr({ db, req }) {
-    const { did } = req.params;
+
     const { userId } = req.user;
     const { did_usuario, dataQr } = req.body;
 
