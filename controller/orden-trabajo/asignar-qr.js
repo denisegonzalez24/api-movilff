@@ -28,6 +28,14 @@ export async function asignarOrdenTrabajoQr({ db, req }) {
         trowIfNotFound: true,
         quien: userId
     })
+
+    if (didOt.alertad == 1) {
+        throw new CustomException({
+            title: "Pedido Alertado",
+            message: "El pedido tiene productos alertados, no se puede asignar la orden de trabajo",
+            status: 400,
+        });
+    }
     const didCliente = didOt.didCliente;
     const didArmador = didOt.didArmador;
     const armado = didOt.armado;
