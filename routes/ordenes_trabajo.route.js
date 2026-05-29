@@ -31,7 +31,7 @@ ordenes.put(
     })
 );
 ordenes.put(
-    "/asignar-qr/:did",
+    "/asignar-qr",
     buildHandlerWrapper({
         requiredParams: ["did"],
         optional: ["did_usuario"],
