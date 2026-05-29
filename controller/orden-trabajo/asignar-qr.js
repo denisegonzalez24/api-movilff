@@ -28,7 +28,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         db,
         table: "pedidos",
         where: { did: didPedido },
-        select: ["didOt", "didCliente", "armado", "quienArmado", "alertado"],
+        select: ["did_ot", "didCliente", "armado", "quienArmado", "alertado"],
         trowIfNotFound: true,
         quien: userId
     })
@@ -45,7 +45,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const armado = didOt.armado;
     const quienArmado = didOt.quienArmado;
     const alertado = didOt.alertado;
-    didOt = didOt.didOt;
+    didOt = didOt.did_ot;
     console.log("didOt", didOt);
     console.log("didCliente", didCliente);
     //si es null debo crear el pedido de venta
