@@ -10,6 +10,7 @@ import { asignarOrdenTrabajo } from "../controller/orden-trabajo/asignar.js";
 import { armar } from "../controller/orden-trabajo/armar.js";
 import { desestimarOrdenTrabajo } from "../controller/orden-trabajo/desestimar.js";
 import { asignarOrdenTrabajoQr } from "../controller/orden-trabajo/asignar-qr.js";
+import { desasignarOrdenTrabajoQr } from "../controller/orden-trabajo/desasignar-qr.js";
 
 const ordenes = Router();
 
@@ -33,9 +34,15 @@ ordenes.put(
 ordenes.put(
     "/asignar-qr",
     buildHandlerWrapper({
-        requiredParams: ["did"],
         optional: ["did_usuario", "dataQr"],
-        controller: ({ db, req }) => asignarOrdenTrabajoQr({ db, req }),
+        controller: ({ db, req, company }) => asignarOrdenTrabajoQr({ db, req, company }),
+    })
+);
+ordenes.put(
+    "/desasignar-qr",
+    buildHandlerWrapper({
+        optional: ["did_usuario", "motivo", "dataQr"],
+        controller: ({ db, req, company }) => desasignarOrdenTrabajoQr({ db, req, company }),
     })
 );
 

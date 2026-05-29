@@ -1,10 +1,18 @@
 import { LightdataORM } from "lightdata-tools";
 
-export async function desasignarOrdenTrabajoQr({ db, req }) {
+export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     const { userId } = req.user;
     const { motivo, dataQr } = req.body;
     const didPedido = Number(dataQr.didPedido);
     const now = new Date();
+
+    if (dataQr.didEmpresa !== company.did) {
+        throw new CustomException({
+            status: 400,
+            title: "Empresa no válida",
+            message: "El QR no pertenece a una empresa del qr",
+        });
+    }
 
     const didOt = await LightdataORM.select({
         db,
@@ -14,7 +22,7 @@ export async function desasignarOrdenTrabajoQr({ db, req }) {
         trowIfNotFound: true
     });
 
-    //? que es armado = 1, 2,3 etc
+    //todo queda estado 0
     await LightdataORM.update({
         db,
         table: "ordenes_trabajo",
@@ -28,7 +36,7 @@ export async function desasignarOrdenTrabajoQr({ db, req }) {
         throwIfNotFound: true
     });
 
-    //? que es armado = 1, 2,3 etc por ahora lo dejo en 1
+    //?  armado = 1 significaque la es una pv, estado de armado en proceso
     await LightdataORM.update({
         db,
         table: "pedidos",

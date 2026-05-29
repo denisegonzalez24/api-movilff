@@ -2,7 +2,7 @@ import { CustomException, LightdataORM } from "lightdata-tools";
 
 
 
-export async function asignarOrdenTrabajoQr({ db, req }) {
+export async function asignarOrdenTrabajoQr({ db, req, company }) {
 
     const { userId } = req.user;
     const { did_usuario, dataQr } = req.body;
