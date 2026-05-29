@@ -34,7 +34,7 @@ ordenes.put(
     "/asignar-qr",
     buildHandlerWrapper({
         requiredParams: ["did"],
-        optional: ["did_usuario"],
+        optional: ["did_usuario", "dataQr"],
         controller: ({ db, req }) => asignarOrdenTrabajoQr({ db, req }),
     })
 );
