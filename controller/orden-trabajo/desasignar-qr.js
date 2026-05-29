@@ -6,13 +6,15 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     const didPedido = Number(dataQr.didPedido);
     const now = new Date();
 
-    if (Number(dataQr.didEmpresa) !== Number(companyId)) {
+    const didEmpresaQr = Number(dataQr.didEmpresa);
+    if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
             title: "Empresa no válida",
             message: "El QR no pertenece a una empresa del qr",
         });
     }
+
 
     const didOt = await LightdataORM.select({
         db,

@@ -7,11 +7,11 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const { userId, companyId } = req.user;
     const { did_usuario, dataQr } = req.body;
 
-
     const now = new Date();
     console.log("dataQr", dataQr);
     console.log("companyId", companyId);
-    if (Number(dataQr.didEmpresa) !== Number(companyId)) {
+    const didEmpresaQr = Number(dataQr.didEmpresa);
+    if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
             title: "Empresa no válida",
