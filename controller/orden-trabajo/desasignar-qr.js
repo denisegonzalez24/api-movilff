@@ -1,12 +1,12 @@
 import { LightdataORM } from "lightdata-tools";
 
 export async function desasignarOrdenTrabajoQr({ db, req, company }) {
-    const { userId } = req.user;
+    const { userId, companyId } = req.user;
     const { motivo, dataQr } = req.body;
     const didPedido = Number(dataQr.didPedido);
     const now = new Date();
 
-    if (dataQr.didEmpresa !== company.did) {
+    if (dataQr.didEmpresa !== companyId) {
         throw new CustomException({
             status: 400,
             title: "Empresa no válida",

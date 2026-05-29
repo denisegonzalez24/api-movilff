@@ -3,6 +3,7 @@ import { LightdataORM } from "lightdata-tools";
 export async function desasignarOrdenTrabajo({ db, req }) {
     const { did } = req.params;
     const { userId, motivo } = req.body;
+
     const now = new Date();
 
     await LightdataORM.update({

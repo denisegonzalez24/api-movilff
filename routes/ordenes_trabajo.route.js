@@ -35,14 +35,14 @@ ordenes.put(
     "/asignar-qr",
     buildHandlerWrapper({
         optional: ["did_usuario", "dataQr"],
-        controller: ({ db, req, company }) => asignarOrdenTrabajoQr({ db, req, company }),
+        controller: ({ db, req }) => asignarOrdenTrabajoQr({ db, req }),
     })
 );
 ordenes.put(
     "/desasignar-qr",
     buildHandlerWrapper({
         optional: ["did_usuario", "motivo", "dataQr"],
-        controller: ({ db, req, company }) => desasignarOrdenTrabajoQr({ db, req, company }),
+        controller: ({ db, req }) => desasignarOrdenTrabajoQr({ db, req }),
     })
 );
 
