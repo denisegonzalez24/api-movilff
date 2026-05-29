@@ -4,9 +4,9 @@ import { CustomException, LightdataORM } from "lightdata-tools";
 
 export async function asignarOrdenTrabajoQr({ db, req, company }) {
 
-    const { userId, companyId } = req.user;
+    const { userId } = req.user;
     const { did_usuario, dataQr } = req.body;
-
+    const companyId = Number(req.user.companyId);
     const now = new Date();
     const didEmpresaQr = Number(dataQr.didempresa);
 
@@ -14,7 +14,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         throw new CustomException({
             status: 400,
             title: "Empresa no válida",
-            message: "El QR no pertenece a una empresa del qr",
+            message: "El QR no pertenece a la empresa",
         });
     }
 
