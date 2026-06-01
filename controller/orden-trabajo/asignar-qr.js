@@ -12,8 +12,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const now = new Date();
     const didEmpresaQr = Number(dataQr.didempresa);
 
-    console.log("dataQr", dataQr);
-    console.log("companyId", companyId);
+    //! veifico si el qr pertenece a la epresa
     if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
@@ -26,6 +25,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const didPedido = Number(dataQr.didpedido);
 
     //? chequear si truena cuando el pedido no existe, o si el pedido ya tiene una orden de trabajo asociada
+    //tomo pedido
     let [pedido] = await LightdataORM.select({
         db,
         table: "pedidos",
@@ -35,6 +35,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         quien: userId,
         log: true
     })
+    //verifico: mismo asignado, estado pedido invalido, alertado = 1
     if (pedido.quien_armado == did_usuario) {
         throw new CustomException({
             title: "Pedido ya asignado",
@@ -42,7 +43,13 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
             status: 400,
         });
     }
-
+    if (pedido.armado in [2, 3]) {
+        throw new CustomException({
+            title: "Pedido armado o cancelado",
+            message: "El pedido ya está en proceso de armado o ha sido cancelado, no se puede asignar la orden de trabajo",
+            status: 400,
+        });
+    }
     if (pedido.alertado == 1) {
         throw new CustomException({
             title: "Pedido Alertado",
@@ -125,7 +132,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
 
         //si estaba armado actulizar
         if (quienArmado != did_usuario) {
-            updateArmado = await LightdataORM.update({
+            let updateArmado = await LightdataORM.update({
                 db,
                 table: "pedidos",
                 data: {
