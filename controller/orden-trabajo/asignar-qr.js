@@ -43,7 +43,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
             status: 400,
         });
     }
-    if (pedido.armado in [2, 3]) {
+    if (pedido.armado == 2 || pedido.armado == 3) {
         throw new CustomException({
             title: "Pedido armado o cancelado",
             message: "El pedido ya está en proceso de armado o ha sido cancelado, no se puede asignar la orden de trabajo",
