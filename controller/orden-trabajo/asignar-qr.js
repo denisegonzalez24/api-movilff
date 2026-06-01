@@ -1,8 +1,10 @@
-import { CustomException, LightdataORM } from "lightdata-tools";
+import { CustomException, LightdataORM, logPurple } from "lightdata-tools";
 
 
 
 export async function asignarOrdenTrabajoQr({ db, req, company }) {
+
+    console.log("asignarOrdenTrabajoQr", { body: req.body, user: req.user });
 
     const { userId } = req.user;
     const { did_usuario, dataQr } = req.body;
@@ -24,33 +26,42 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     const didPedido = Number(dataQr.didpedido);
 
     //? chequear si truena cuando el pedido no existe, o si el pedido ya tiene una orden de trabajo asociada
-    let didOt = await LightdataORM.select({
+    let [pedido] = await LightdataORM.select({
         db,
         table: "pedidos",
         where: { did: didPedido },
-        select: ["did_ot", "did_cliente", "armado", "quienArmado", "alertado"],
+        select: ["did_ot", "did_cliente", "armado", "quien_armado", "alertado"],
         trowIfNotFound: true,
-        quien: userId
+        quien: userId,
+        log: true
     })
+    if (pedido.quien_armado == did_usuario) {
+        throw new CustomException({
+            title: "Pedido ya asignado",
+            message: "El pedido ya está asignado a este usuario",
+            status: 400,
+        });
+    }
 
-    if (didOt.alertad == 1) {
+    if (pedido.alertado == 1) {
         throw new CustomException({
             title: "Pedido Alertado",
             message: "El pedido tiene productos alertados, no se puede asignar la orden de trabajo",
             status: 400,
         });
     }
-    const didCliente = didOt.didCliente;
-    const didArmador = didOt.didArmador;
-    const armado = didOt.armado;
-    const quienArmado = didOt.quienArmado;
-    const alertado = didOt.alertado;
-    didOt = didOt.did_ot;
+    const didCliente = pedido.did_cliente;
+    const didArmador = pedido.did_armador;
+    const armado = pedido.armado;
+    const quienArmado = pedido.quien_armado;
+    const alertado = pedido.alertado;
+    let didOt = pedido.did_ot;
     console.log("didOt", didOt);
     console.log("didCliente", didCliente);
     //si es null debo crear el pedido de venta
 
     if (!didOt) {
+        logPurple("No tiene orden de trabajo, se creará una nueva");
 
         //! revisar si vale la pena verificar aca o no
         /*
@@ -75,8 +86,9 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         didOt = await LightdataORM.insert({
             db,
             table: "ordenes_trabajo",
-            data: { estado: 1, fecha_inicio: new Date(), fecha_asignado: new Date(), asignado: did_usuario },
-            quien: userId
+            data: { estado: 1, fecha_inicio: now, fecha_asignado: now, asignado: did_usuario, alertada: 0 },
+            quien: userId,
+            log: true
         });
 
         await LightdataORM.insert({
@@ -84,6 +96,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
             table: "ordenes_trabajo_pedidos",
             data: { did_orden_trabajo: didOt, did_pedido: didPedido, },
             quien: userId,
+            log: true
         });
 
         await LightdataORM.update({
@@ -92,11 +105,12 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
             data: {
                 armado: 1,
                 quien_armado: userId,
-                fecha_armado: new Date(),
+                fecha_armado: now,
                 did_ot: didOt
             },
             where: { did: didPedido },
             quien: userId,
+            log: true
         });
 
         return {
@@ -107,6 +121,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         };
     } else {
 
+        logPurple("La orden de trabajo ya existe, se actualizará el armado si es necesario y se reasignará la orden de trabajo");
 
         //si estaba armado actulizar
         if (quienArmado != did_usuario) {
@@ -115,10 +130,11 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
                 table: "pedidos",
                 data: {
                     armado: 1,
-                    quien_armado: did_usuario, fecha_armado: new Date(),
+                    quien_armado: did_usuario, fecha_armado: now,
                 },
                 where: { did: didPedido },
                 quien: userId,
+                log: true
             });
         }
 
@@ -131,7 +147,8 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
                 asignado: did_usuario,
                 fecha_asignado: now,
             },
-            quien: userId
+            quien: userId,
+            log: true
         });
 
         return {
