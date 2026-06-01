@@ -35,12 +35,19 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
         where: { did: didOt },
         select: ["asignado", "estado", "did"]
     });
+    if (ot.estado == 3) {
+        throw new CustomException({
+            status: 400,
+            title: "Orden de trabajo finalizada",
+            message: "No se puede desasignar una orden que ya fue armada",
+        });
+    }
 
     if (!ot.did) {
         throw new CustomException({
             status: 404,
-            title: "Orden de trabajo no encontrada",
-            message: "No se encontró la orden de trabajo asociada al pedido",
+            title: "Pedido de venta no encontrado",
+            message: "No se encontró un PV asociado la pedido",
         });
     }
     //!verificar si no esta armado
