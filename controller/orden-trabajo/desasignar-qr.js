@@ -22,21 +22,34 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
         db,
         table: "ordenes_trabajo_pedidos",
         where: { did_pedido: didPedido },
-        select: ["did_orden_trabajo", "quien_armado", "armado"],
+        select: ["did_orden_trabajo", "quien_armado", "armado", "alertado", "did_cliente"],
         trowIfNotFound: true
     });
 
     const didOt = ordenPedido.did_orden_trabajo;
 
-    const ot = await LightdataORM.select({
+    const [ot] = await LightdataORM.select({
         db,
         table: "ordenes_trabajo",
         where: { did: didOt },
-        select: ["asignado", "estado"],
-        trowIfNotFound: true
+        select: ["asignado", "estado", "did"]
     });
 
+    if (!ot.did) {
+        throw new CustomException({
+            status: 404,
+            title: "Orden de trabajo no encontrada",
+            message: "No se encontró la orden de trabajo asociada al pedido",
+        });
+    }
     //!verificar si no esta armado
+    if (ot.asignado == 0) {
+        throw new CustomException({
+            status: 400,
+            title: "Orden de trabajo no asignada",
+            message: "No se puede desasignar una orden no asignada",
+        });
+    }
 
 
     //todo queda estado 0
@@ -49,11 +62,11 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
             motivo: motivo || null,
             fecha_asignado: null,
         },
-        quien: userId,
-        throwIfNotFound: true
+        quien: userId
     });
 
     //?  armado = 1 significaque la es una pv, estado de armado en proceso
+    //todo definir si aca queda = 0 O 1
     await LightdataORM.update({
         db,
         table: "pedidos",
