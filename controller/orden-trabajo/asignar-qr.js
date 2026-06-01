@@ -28,7 +28,7 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
         db,
         table: "pedidos",
         where: { did: didPedido },
-        select: ["did_ot", "didCliente", "armado", "quienArmado", "alertado"],
+        select: ["did_ot", "did_cliente", "armado", "quienArmado", "alertado"],
         trowIfNotFound: true,
         quien: userId
     })
