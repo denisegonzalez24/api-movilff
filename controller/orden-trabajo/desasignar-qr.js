@@ -22,8 +22,9 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
         db,
         table: "ordenes_trabajo_pedidos",
         where: { did_pedido: didPedido },
-        select: ["did_orden_trabajo", "quien_armado", "armado", "alertado", "did_cliente"],
-        trowIfNotFound: true
+        select: ["did_orden_trabajo", "did_cliente"],
+        trowIfNotFound: true,
+        log: true
     });
 
     const didOt = ordenPedido.did_orden_trabajo;
@@ -62,7 +63,8 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
             motivo: motivo || null,
             fecha_asignado: null,
         },
-        quien: userId
+        quien: userId,
+        log: true
     });
 
     //?  armado = 1 significaque la es una pv, estado de armado en proceso
@@ -77,7 +79,8 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
             fecha_armado: null,
         },
         quien: userId,
-        throwIfNotFound: true
+        throwIfNotFound: true,
+        log: true
     });
 
 
