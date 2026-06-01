@@ -1,12 +1,14 @@
-import { LightdataORM } from "lightdata-tools";
+import { CustomException, LightdataORM, logPurple } from "lightdata-tools";
 
 export async function desasignarOrdenTrabajoQr({ db, req, company }) {
-    const { userId, companyId } = req.user;
+    logPurple("desasignarOrdenTrabajoQr", { body: req.body, user: req.user });
+    const { userId } = req.user;
     const { motivo, dataQr } = req.body;
     const didPedido = Number(dataQr.didpedido);
     const now = new Date();
 
     const didEmpresaQr = Number(dataQr.didempresa);
+    const companyId = Number(req.user.companyId);
     if (didEmpresaQr !== companyId) {
         throw new CustomException({
             status: 400,
@@ -16,23 +18,36 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     }
 
 
-    const didOt = await LightdataORM.select({
+    const [ordenPedido] = await LightdataORM.select({
         db,
         table: "ordenes_trabajo_pedidos",
         where: { did_pedido: didPedido },
-        select: ["did_orden_trabajo"],
+        select: ["did_orden_trabajo", "quien_armado", "armado"],
         trowIfNotFound: true
     });
+
+    const didOt = ordenPedido.did_orden_trabajo;
+
+    const ot = await LightdataORM.select({
+        db,
+        table: "ordenes_trabajo",
+        where: { did: didOt },
+        select: ["asignado", "estado"],
+        trowIfNotFound: true
+    });
+
+    //!verificar si no esta armado
+
 
     //todo queda estado 0
     await LightdataORM.update({
         db,
         table: "ordenes_trabajo",
-        where: { did: didOt.did_orden_trabajo },
+        where: { did: didOt },
         data: {
             asignado: 0,
             motivo: motivo || null,
-            fecha_asignado: now,
+            fecha_asignado: null,
         },
         quien: userId,
         throwIfNotFound: true
@@ -46,7 +61,7 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
         data: {
             armado: 1,
             quien_armado: 0,
-            fecha_asignado: null,
+            fecha_armado: null,
         },
         quien: userId,
         throwIfNotFound: true
