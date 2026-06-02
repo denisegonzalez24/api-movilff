@@ -15,9 +15,9 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     //! veifico si el qr pertenece a la epresa
     if (didEmpresaQr !== companyId) {
         throw new CustomException({
-            status: 400,
-            title: "Empresa no válida",
-            message: "El QR no pertenece a la empresa",
+            status: 403,
+            title: "El QR no pertenece a la empresa",
+            message: "Por favor verifique el QR e intente nuevamente",
         });
     }
 
@@ -38,23 +38,23 @@ export async function asignarOrdenTrabajoQr({ db, req, company }) {
     //verifico: mismo asignado, estado pedido invalido, alertado = 1
     if (pedido.quien_armado == did_usuario) {
         throw new CustomException({
-            title: "Pedido ya asignado",
+            title: "Pedido asignado a este usuario",
             message: "El pedido ya está asignado a este usuario",
-            status: 400,
+            status: 409,
         });
     }
     if (pedido.armado == 2 || pedido.armado == 3) {
         throw new CustomException({
             title: "Pedido armado o cancelado",
             message: "El pedido ya está en proceso de armado o ha sido cancelado, no se puede asignar la orden de trabajo",
-            status: 400,
+            status: 409,
         });
     }
     if (pedido.alertado == 1) {
         throw new CustomException({
-            title: "Pedido Alertado",
-            message: "El pedido tiene productos alertados, no se puede asignar la orden de trabajo",
-            status: 400,
+            title: "Pedido alertado",
+            message: "El pedido tiene productos alertados, no se puede asignar.",
+            status: 409,
         });
     }
     const didCliente = pedido.did_cliente;

@@ -37,7 +37,7 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     });
     if (ot.estado == 3) {
         throw new CustomException({
-            status: 400,
+            status: 409,
             title: "Orden de trabajo finalizada",
             message: "No se puede desasignar una orden que ya fue armada",
         });
@@ -53,7 +53,7 @@ export async function desasignarOrdenTrabajoQr({ db, req, company }) {
     //!verificar si no esta armado
     if (ot.asignado == 0) {
         throw new CustomException({
-            status: 400,
+            status: 409,
             title: "Orden de trabajo no asignada",
             message: "No se puede desasignar una orden no asignada",
         });
