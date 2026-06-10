@@ -5,6 +5,8 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
     const q = req.query || {};
     const perfilNum = Number(profile);
     const hasAsignadoQuery = Object.prototype.hasOwnProperty.call(q, "asignado");
+    const offset = Math.max(0, Number(q.offset) || 0);
+    const limit = Math.max(1, Math.min(Number(q.limit) || 20, 20));
     const mergeInsumos = (target, insumos) => {
         for (const insumo of insumos ?? []) {
             const didInsumo = String(insumo?.did_insumo ?? "");
@@ -670,9 +672,24 @@ export async function getOrdenesTrabajoByUsuario({ db, req, userId, profile }) {
         return normalizedSortDir === "desc" ? compare * -1 : compare;
     });
 
+    const total = data.length;
+    const asignados = data.filter((ot) => {
+        const asignado = String(ot?.asignado ?? "").trim();
+        return asignado !== "" && asignado !== "0";
+    }).length;
+    const sin_asignar = total - asignados;
+    const paginatedData = data.slice(offset, offset + limit);
+
     return {
         success: true,
         message: "Órdenes de Trabajo obtenidas correctamente",
-        data,
+        data: paginatedData,
+        meta: {
+            total,
+            asignados,
+            sin_asignar,
+            offset,
+            limit,
+        },
     };
 }
