@@ -8,8 +8,7 @@ const fcm = Router();
 fcm.post(
     "/token",
     buildHandlerWrapper({
-        required: ["tokenFcm"],
-        optional: ["plataforma"],
+        optional: ["fcmToken", "deviceId", "deviceModel", "androidVersion", "appVersion", "plataforma", "tokenFcm"],
         controller: ({ req }) => registrarTokenFcm({ req }),
     })
 );
@@ -24,4 +23,3 @@ fcm.post(
 );
 
 export default fcm;
-

@@ -8,20 +8,29 @@ import {
 import { redisClient } from "../../db.js";
 
 export async function registrarTokenFcm({ req }) {
-    const { tokenFcm, plataforma } = req.body;
+    const {
+        tokenFcm,
+        fcmToken,
+        plataforma,
+        deviceId,
+        deviceModel,
+        androidVersion,
+        appVersion,
+    } = req.body || {};
     const didEmpresa = req.user.companyId;
     const userId = req.user.userId;
     const perfil = req.user.profile;
+    const rawToken = fcmToken ?? tokenFcm;
 
-    if (!String(tokenFcm || "").trim()) {
+    if (!String(rawToken || "").trim()) {
         throw new CustomException({
             title: "Token FCM requerido",
-            message: "Debe enviar tokenFcm",
+            message: "Debe enviar fcmToken",
             status: Status.badRequest,
         });
     }
 
-    const token = String(tokenFcm).trim();
+    const token = String(rawToken).trim();
     const tokenHash = hashFcmToken(token);
 
     const entradasAnteriores = await scanFcmTokenEntries(`*:*:*:${tokenHash}`);
@@ -36,6 +45,10 @@ export async function registrarTokenFcm({ req }) {
         perfil: String(perfil),
         userId: String(userId),
         plataforma: plataforma ? String(plataforma) : "",
+        deviceId: deviceId ? String(deviceId) : "",
+        deviceModel: deviceModel ? String(deviceModel) : "",
+        androidVersion: androidVersion ? String(androidVersion) : "",
+        appVersion: appVersion ? String(appVersion) : "",
         updatedAt: new Date().toISOString(),
     };
 
@@ -46,8 +59,8 @@ export async function registrarTokenFcm({ req }) {
         message: "Token FCM registrado correctamente",
         data: {
             field,
+            tokenAlias: "fcmToken",
         },
         meta: { timestamp: new Date().toISOString() },
     };
 }
-

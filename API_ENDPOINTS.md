@@ -15,8 +15,9 @@ http://localhost:13000
   - `GET /_sat/metrics`
   - `POST /api/auth/login/empresa`
   - `POST /api/auth/login/user`
-  - `POST /api/auth/login/refresh`
+- `POST /api/auth/login/refresh`
   - `POST /api/auth/logout`
+  - `POST /api/auth/device-token`
 - Privados:
   - `GET /api/preload`
   - `GET /api/ordenes-trabajo`
@@ -223,6 +224,34 @@ Invalida el `refreshToken`.
   "refreshToken": "REFRESH_ACTUAL"
 }
 ```
+
+### `POST /api/auth/device-token`
+
+Registra o actualiza el token `FCM` del dispositivo autenticado.
+
+#### Headers
+
+```http
+Authorization: Bearer TU_TOKEN
+```
+
+#### Body
+
+```json
+{
+  "fcmToken": "TOKEN_FCM",
+  "deviceId": "DEVICE_ID",
+  "deviceModel": "Samsung A54",
+  "androidVersion": "14",
+  "appVersion": "1.0.0"
+}
+```
+
+#### Observaciones
+
+- Este endpoint queda pensado para integracion mobile.
+- Tambien sigue funcionando `POST /api/fcm/token` por compatibilidad.
+- `plataforma` sigue siendo opcional si la app quiere enviarla.
 
 #### Response ejemplo
 

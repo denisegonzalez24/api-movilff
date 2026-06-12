@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { companiesService, companiesServiceFixed } from "../db.js";
+import { companiesService, companiesServiceFixed, jwtAudience, jwtIssuer, jwtSecret } from "../db.js";
 import { login, logout, refresh } from "../controller/auth/login.js";
 import { buildHandlerWrapper } from "../src/build_handler_wrapper.js";
 import { loginEmpresa } from "../controller/auth/login_empresa.js";
+import { verifyToken } from "lightdata-tools";
+import { registrarTokenFcm } from "../controller/fcm/registrarToken.js";
 
 
 
@@ -52,6 +54,15 @@ auth.post("/logout", async (req, res, next) => {
         next(e);
     }
 });
+
+auth.post(
+    "/device-token",
+    verifyToken({ jwtSecret, jwtIssuer, jwtAudience }),
+    buildHandlerWrapper({
+        optional: ["fcmToken", "deviceId", "deviceModel", "androidVersion", "appVersion", "plataforma", "tokenFcm"],
+        controller: ({ req }) => registrarTokenFcm({ req }),
+    })
+);
 
 
 export default auth;
